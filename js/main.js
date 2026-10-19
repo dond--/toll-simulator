@@ -38,7 +38,12 @@ events.on('toll:violation', ({ segmentId, tollClass }) => {
 const restartButton = document.getElementById('restart');
 const dashboard = createDashboard(document.getElementById('dashboard'));
 const zoomButton = document.getElementById('zoom-route');
-const trips = createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings: tollSettings });
+const speedInput = document.getElementById('speed');
+const speedOutput = document.getElementById('speed-value');
+speedInput.addEventListener('input', () => {
+  speedOutput.textContent = `${speedInput.value}×`;
+});
+const trips = createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings: tollSettings, getTimeScale: () => Number(speedInput.value) });
 restartButton.addEventListener('click', trips.restart);
 zoomButton.addEventListener('click', trips.zoomToRoute);
 const planner = createPlanner(map, network, statusEl, { onRoute: trips.start, onClear: trips.stop });

@@ -1,4 +1,4 @@
-import { COLORS, SIM_TIME_SCALE } from '../config.js';
+import { COLORS } from '../config.js';
 import { formatDecimal, formatDuration } from '../format.js';
 import { createTollLedger } from '../tolls/ledger.js';
 import { createTrip } from '../sim/trip.js';
@@ -7,7 +7,7 @@ import { createSummaryTip } from './summaryTip.js';
 
 const MAX_FRAME_MS = 250;
 
-export function createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings }) {
+export function createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings, getTimeScale }) {
   let route = null;
   let trip = null;
   let ledger = null;
@@ -69,7 +69,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
 
   function tick(now) {
     if (lastTs !== null) {
-      trip.advance(Math.min(now - lastTs, MAX_FRAME_MS) * SIM_TIME_SCALE);
+      trip.advance(Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale());
     }
     lastTs = now;
     const { state } = trip;

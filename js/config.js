@@ -2,8 +2,6 @@ export const TOLL_CLASSES = ['A', 'B', 'C'];
 
 export const TOLL_RATES = { A: 1, B: 10, C: 100 };
 
-export const SIM_TIME_SCALE = 60;
-
 export const COLORS = {
   free: '#000000',
   blocked: '#8b0000',

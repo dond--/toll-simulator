@@ -10,6 +10,10 @@
 <body>
   <header class="topbar">
     <span id="status">Načítám síť…</span>
+    <label class="speed">Zrychlení
+      <input id="speed" type="range" min="5" max="60" step="1" value="60">
+      <output id="speed-value">60×</output>
+    </label>
     <button id="zoom-route" class="icon-button" type="button" title="Zoom na vyhledanou trasu" aria-label="Zoom na vyhledanou trasu" disabled>
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>

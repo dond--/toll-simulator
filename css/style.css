@@ -121,6 +121,17 @@ body {
   color: #777;
   cursor: default;
 }
+.speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.speed output {
+  min-width: 3em;
+}
+
 .topbar .icon-button {
   display: inline-flex;
   align-items: center;

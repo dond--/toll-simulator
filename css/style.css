@@ -121,6 +121,12 @@ body {
   color: #777;
   cursor: default;
 }
+.topbar .icon-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+}
+
 .topbar button:disabled {
   opacity: 0.5;
   cursor: default;

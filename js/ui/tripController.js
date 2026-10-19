@@ -7,7 +7,7 @@ import { createSummaryTip } from './summaryTip.js';
 
 const MAX_FRAME_MS = 250;
 
-export function createTripController({ map, network, events, statusEl, restartButton, dashboard, tollPanel, settings }) {
+export function createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings }) {
   let route = null;
   let trip = null;
   let ledger = null;
@@ -30,6 +30,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
     halt();
     route = null;
     restartButton.disabled = true;
+    zoomButton.disabled = true;
     summaryTip.clear();
     dashboard.clear();
   }
@@ -51,6 +52,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
     lastTs = null;
     frame = requestAnimationFrame(tick);
     restartButton.disabled = false;
+    zoomButton.disabled = false;
     tollPanel.setLocked(true);
   }
 
@@ -108,5 +110,9 @@ export function createTripController({ map, network, events, statusEl, restartBu
     return route?.pieces.some((piece) => piece.segmentId === segmentId) ?? false;
   }
 
-  return { start, stop, restart, isArrived, isOnRoute };
+  function zoomToRoute() {
+    if (route) map.fitBounds(L.latLngBounds(route.coords).pad(0.03));
+  }
+
+  return { start, stop, restart, zoomToRoute, isArrived, isOnRoute };
 }

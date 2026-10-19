@@ -10,6 +10,15 @@ test('řádky mýtného obsahují třídy a celkovou délku', () => {
   assert.equal(rows.at(-1).value, '3,50 km');
 });
 
+test('v režimu předplatné přidá řádky s úseky a km bez předplatného', () => {
+  const withViolations = { ...state, violations: 2, violatedKm: 4.25 };
+  const rows = tollRows(withViolations, false, true);
+  assert.deepEqual(rows.slice(-2), [
+    { label: 'Úseky s porušením', value: '2' },
+    { label: 'Km s porušením', value: '4,25 km' },
+  ]);
+});
+
 test('v režimu platby za km přidá řádek s mýtným', () => {
   assert.deepEqual(tollRows(state, true).at(-1), { label: 'Mýtné k úhradě', value: '35,00 Kč', strong: true });
 });

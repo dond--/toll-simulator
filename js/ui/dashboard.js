@@ -1,6 +1,6 @@
 import { formatDecimal, formatDuration } from '../format.js';
 
-export function tollRows(ledgerState, showBill) {
+export function tollRows(ledgerState, showBill, showViolations = false) {
   const km = ledgerState.tolledKmByClass;
   const rows = [
     { label: 'Úseky s mýtem', value: String(ledgerState.tolledSegments) },
@@ -9,6 +9,10 @@ export function tollRows(ledgerState, showBill) {
     { label: 'Třída C', value: `${formatDecimal(km.C)} km`, tollClass: 'C' },
     { label: 'Celkem', value: `${formatDecimal(km.A + km.B + km.C)} km`, strong: true },
   ];
+  if (showViolations) {
+    rows.push({ label: 'Úseky s porušením', value: String(ledgerState.violations) });
+    rows.push({ label: 'Km s porušením', value: `${formatDecimal(ledgerState.violatedKm)} km` });
+  }
   if (showBill) rows.push({ label: 'Mýtné k úhradě', value: `${formatDecimal(ledgerState.bill)} Kč`, strong: true });
   return rows;
 }
@@ -19,12 +23,12 @@ export function createDashboard(root) {
   const list = root.querySelector('dl');
 
   return {
-    update({ distanceKm, totalKm, simMs, ledger, showBill }) {
+    update({ distanceKm, totalKm, simMs, ledger, showBill, showViolations }) {
       root.hidden = false;
       const rows = [
         { label: 'Ujeto', value: `${formatDecimal(distanceKm)} / ${formatDecimal(totalKm)} km` },
         { label: 'Simulovaný čas', value: formatDuration(simMs) },
-        ...tollRows(ledger, showBill),
+        ...tollRows(ledger, showBill, showViolations),
       ];
       list.innerHTML = rows.map(({ label, value }) => `<dt>${label}</dt><dd>${value}</dd>`).join('');
     },

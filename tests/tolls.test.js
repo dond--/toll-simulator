@@ -48,6 +48,8 @@ test('ledger počítá zpoplatněné úseky a km po třídách a hlásí poruše
   events.emit('segment:enter', { segmentId: 's4', lengthKm: 5, simMs: 11 * HOUR });
 
   assert.deepEqual(violations, ['s1', 's3']);
+  assert.equal(state.violations, 2);
+  assert.equal(state.violatedKm, 6);
   assert.equal(state.tolledSegments, 3);
   assert.deepEqual(state.tolledKmByClass, { A: 3, B: 4, C: 2 });
 });

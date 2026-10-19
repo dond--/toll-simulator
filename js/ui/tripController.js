@@ -86,6 +86,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
       simMs: state.simMs,
       ledger: ledger.state,
       showBill: tripSettings.mode === 'postFactum',
+      showViolations: tripSettings.mode === 'subscription',
     });
     statusEl.textContent = `Jízda: ${formatDecimal(state.distanceKm)} / ${formatDecimal(state.totalKm)} km · simulovaný čas ${formatDuration(state.simMs)}`;
     frame = requestAnimationFrame(tick);
@@ -96,7 +97,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
     const km = ledger.state.tolledKmByClass;
     const bill = postFactum ? ` · celkové mýtné: ${formatDecimal(ledger.state.bill)} Kč` : '';
     statusEl.textContent = `Cíl dosažen: ${formatDecimal(state.distanceKm)} km za ${formatDuration(state.simMs)}\nDélka zpoplatněných úseků: ${formatDecimal(km.A + km.B + km.C)} km${bill}`;
-    summaryTip.set(tollRows(ledger.state, postFactum));
+    summaryTip.set(tollRows(ledger.state, postFactum, !postFactum));
   }
 
   return { start, stop, restart };

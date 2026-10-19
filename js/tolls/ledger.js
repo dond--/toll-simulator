@@ -2,7 +2,7 @@ import { TOLL_RATES } from '../config.js';
 import { subscriptionCovers } from './policy.js';
 
 export function createTollLedger({ network, events, settings, startedAt }) {
-  const state = { tolledSegments: 0, tolledKmByClass: { A: 0, B: 0, C: 0 }, bill: 0 };
+  const state = { tolledSegments: 0, tolledKmByClass: { A: 0, B: 0, C: 0 }, bill: 0, violations: 0, violatedKm: 0 };
 
   const unsubscribe = events.on('segment:enter', ({ segmentId, lengthKm, simMs }) => {
     const { tollClass } = network.segments.get(segmentId);
@@ -12,6 +12,8 @@ export function createTollLedger({ network, events, settings, startedAt }) {
     if (settings.mode === 'postFactum') {
       state.bill += lengthKm * TOLL_RATES[tollClass];
     } else if (!subscriptionCovers(settings, tollClass, startedAt + simMs)) {
+      state.violations++;
+      state.violatedKm += lengthKm;
       events.emit('toll:violation', { segmentId, tollClass });
     }
   });

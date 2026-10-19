@@ -1,6 +1,7 @@
 import { formatDecimal } from '../format.js';
 import { COLORS } from '../config.js';
 import { planRoute, snapToNetwork } from '../routing/plan.js';
+import { isSelectionModifier } from './selection.js';
 
 const START_TEXT = 'Klikněte na start trasy.';
 const SNAP_PX = 25;
@@ -75,6 +76,7 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
   map.on('mouseout', () => showPreview(null));
 
   map.on('click', (event) => {
+    if (isSelectionModifier(event.originalEvent)) return;
     const hit = snapNear(event);
     if (!hit) return;
     showPreview(null);

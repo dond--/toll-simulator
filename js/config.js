@@ -12,4 +12,5 @@ export const COLORS = {
   start: '#2e7d32',
   snapPreview: '#9e9e9e',
   goal: '#8e24aa',
+  selection: '#ffeb3b',
 };

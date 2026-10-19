@@ -100,5 +100,13 @@ export function createTripController({ map, network, events, statusEl, restartBu
     summaryTip.set(tollRows(ledger.state, postFactum, !postFactum));
   }
 
-  return { start, stop, restart };
+  function isArrived() {
+    return trip?.state.finished === true;
+  }
+
+  function isOnRoute(segmentId) {
+    return route?.pieces.some((piece) => piece.segmentId === segmentId) ?? false;
+  }
+
+  return { start, stop, restart, isArrived, isOnRoute };
 }

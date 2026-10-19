@@ -10,33 +10,32 @@ const CHOICES = [
   { key: 'C', label: 'Třída C (100 Kč/km)' },
 ];
 
-export function attachTollEditor(map, network, lines, { isIdle, selection }) {
+export function attachTollEditor(map, network, lines, { canEdit, editNote, selection }) {
   for (const [id, line] of lines) {
     line.on('contextmenu', (event) => {
       L.DomEvent.preventDefault(event.originalEvent);
       const targets = selection.targetsFor(id).map((targetId) => network.segments.get(targetId));
-      openEditor(map, event.latlng, targets, lines, isIdle);
+      openEditor(map, event.latlng, targets, lines, { canEdit, editNote });
     });
   }
 }
 
-function openEditor(map, latlng, targets, lines, isIdle) {
-  const idle = isIdle();
+function openEditor(map, latlng, targets, lines, { canEdit, editNote }) {
   const box = document.createElement('div');
   box.className = 'toll-editor';
   box.append(titleFor(targets));
 
-  const blocked = targets.filter((segment) => segment.blocked).length;
-  if (!idle && blocked > 0) box.append(blockedHint(blocked, targets.length));
+  const note = editNote(targets);
+  if (note) box.append(noteFor(note));
 
   const options = document.createElement('div');
   for (const { key, label } of CHOICES) {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
-    button.disabled = isChoiceDisabled(key, targets, idle);
+    button.disabled = isChoiceDisabled(key, targets, canEdit);
     button.addEventListener('click', () => {
-      for (const segment of applyChoice(targets, key, idle)) {
+      for (const segment of applyChoice(targets, key, canEdit)) {
         updateSegmentLine(lines.get(segment.id), segment);
       }
       map.closePopup();
@@ -58,11 +57,8 @@ function titleFor(targets) {
   return title;
 }
 
-function blockedHint(blocked, total) {
+function noteFor(text) {
   const hint = document.createElement('div');
-  hint.textContent =
-    total === 1
-      ? 'Zakázané úseky lze měnit jen bez zadané trasy.'
-      : `Zakázané úseky lze měnit jen bez zadané trasy: ${blocked} z ${total} se přeskočí.`;
+  hint.textContent = text;
   return hint;
 }

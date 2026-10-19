@@ -44,7 +44,15 @@ document.getElementById('reset').addEventListener('click', () => {
   planner.reset();
   selection.clear();
 });
-attachTollEditor(map, network, lines, { isIdle: planner.isIdle, selection });
+attachTollEditor(map, network, lines, {
+  canEdit: (segment) => planner.isIdle() || (trips.isArrived() && !trips.isOnRoute(segment.id)),
+  editNote: (targets) => {
+    if (planner.isIdle()) return null;
+    if (!trips.isArrived()) return 'Během jízdy nelze měnit stav povolený / zakázaný.';
+    return targets.some((segment) => trips.isOnRoute(segment.id)) ? 'Úseky na aktuální trase nelze zakázat.' : null;
+  },
+  selection,
+});
 
 async function loadInitialNetwork(params) {
   if (params.has('seed')) {

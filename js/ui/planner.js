@@ -12,6 +12,7 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
   let goalMarker = null;
   let routeLayer = null;
   let preview = null;
+  let active = false;
 
   function clearLayers() {
     start = null;
@@ -25,6 +26,7 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
 
   function reset() {
     clearLayers();
+    active = true;
     statusEl.textContent = START_TEXT;
     updatePickMode();
   }
@@ -46,12 +48,12 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
 
   function updatePickMode() {
     const container = map.getContainer();
-    container.classList.toggle('pick-start', !start);
-    container.classList.toggle('pick-goal', Boolean(start) && !goal);
+    container.classList.toggle('pick-start', active && !start);
+    container.classList.toggle('pick-goal', active && Boolean(start) && !goal);
   }
 
   function snapNear(event) {
-    if (start && goal) return null;
+    if (!active || (start && goal)) return null;
     const hit = snapToNetwork(network, [event.latlng.lat, event.latlng.lng]);
     if (!hit) return null;
     const distancePx = event.containerPoint.distanceTo(map.latLngToContainerPoint(hit.point));
@@ -90,7 +92,7 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
 
   updatePickMode();
 
-  return { reset };
+  return { reset, isIdle: () => !start && !goal };
 }
 
 function pointMarker([lat, lng], color) {

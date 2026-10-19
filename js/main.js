@@ -16,7 +16,7 @@ const { ok, errors } = validateNetwork(network);
 const statusEl = document.getElementById('status');
 
 if (ok) {
-  statusEl.textContent = `Síť je v pořádku: ${network.nodes.size} uzlů, ${network.segments.size} úseků (seed ${seed})`;
+  statusEl.textContent = `Síť je v pořádku: ${network.nodes.size} uzlů, ${network.segments.size} úseků (seed ${seed}). Klikněte na „Nový výběr“ a zadejte trasu.`;
 } else {
   statusEl.textContent = `Chyby sítě: ${errors.join(' ')}`;
   console.error(errors);
@@ -24,7 +24,6 @@ if (ok) {
 
 const map = createMap('map');
 const lines = renderNetwork(map, network);
-attachTollEditor(map, network, lines);
 
 const events = createEventBus();
 const tollSettings = createTollSettings();
@@ -40,3 +39,4 @@ const trips = createTripController({ map, network, events, statusEl, restartButt
 restartButton.addEventListener('click', trips.restart);
 const planner = createPlanner(map, network, statusEl, { onRoute: trips.start, onClear: trips.stop });
 document.getElementById('reset').addEventListener('click', planner.reset);
+attachTollEditor(map, network, lines, { isIdle: planner.isIdle });

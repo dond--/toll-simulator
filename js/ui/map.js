@@ -27,8 +27,8 @@ export function updateSegmentLine(line, segment) {
 
 function segmentStyle(segment) {
   if (segment.blocked) return { color: COLORS.blocked, weight: 4, dashArray: '8 6' };
-  if (segment.tollClass) return { color: COLORS.toll[segment.tollClass], weight: 6 };
-  return { color: COLORS.free, weight: 4 };
+  if (segment.tollClass) return { color: COLORS.toll[segment.tollClass], weight: 6, dashArray: null };
+  return { color: COLORS.free, weight: 4, dashArray: null };
 }
 
 function describeSegment(segment) {

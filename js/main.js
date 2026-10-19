@@ -52,7 +52,7 @@ async function loadInitialNetwork(params) {
     return { network: generateNetwork({ seed }), label: `záložní síť (seed ${seed})` };
   }
   try {
-    return { network: await loadNetwork('data/beroun.json'), label: 'Berouna (OpenStreetMap)' };
+    return { network: await loadNetwork('data/beroun.json'), label: 'Beroun (OSM)' };
   } catch (error) {
     console.error(error);
     return { network: generateNetwork({ seed: 1 }), label: 'záložní síť (seed 1), Berouna se nepodařilo načíst' };

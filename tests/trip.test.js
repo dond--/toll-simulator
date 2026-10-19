@@ -1,0 +1,54 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { generateNetwork } from '../js/network/generate.js';
+import { createRandom } from '../js/network/random.js';
+import { pointAt } from '../js/network/geo.js';
+import { planRoute } from '../js/routing/plan.js';
+import { createEventBus } from '../js/core/events.js';
+import { createTrip } from '../js/sim/trip.js';
+
+function buildRoute() {
+  const network = generateNetwork({ seed: 1 });
+  const free = [...network.segments.values()].filter((s) => !s.blocked);
+  const from = pointAt(free[0].coords, free[0].lengthKm / 2);
+  const to = pointAt(free[free.length - 1].coords, free[free.length - 1].lengthKm / 2);
+  const result = planRoute(network, from, to, createRandom(11));
+  assert.equal(result.ok, true);
+  return { network, route: result.route };
+}
+
+test('jízda po trase dojede do cíle s celou délkou trasy', () => {
+  const { network, route } = buildRoute();
+  const events = createEventBus();
+  const trip = createTrip({ route, network, events });
+  const totalHours = route.pieces.reduce((sum, p) => sum + p.lengthKm / network.segments.get(p.segmentId).speedKmh, 0);
+
+  trip.advance(totalHours * 3600000 + 1000);
+
+  assert.equal(trip.state.finished, true);
+  assert.ok(Math.abs(trip.state.distanceKm - route.lengthKm) < 1e-6);
+});
+
+test('krokování po malých úsecích dává stejný výsledek jako jeden krok', () => {
+  const { network, route } = buildRoute();
+  const bigStep = createTrip({ route, network, events: createEventBus() });
+  const smallSteps = createTrip({ route, network, events: createEventBus() });
+
+  bigStep.advance(600000);
+  for (let i = 0; i < 6000; i++) smallSteps.advance(100);
+
+  assert.ok(Math.abs(bigStep.state.distanceKm - smallSteps.state.distanceKm) < 1e-6);
+  assert.ok(Math.abs(bigStep.state.simMs - smallSteps.state.simMs) < 1e-6);
+});
+
+test('vjezd do každého úseku trasy je ohlášen událostí', () => {
+  const { network, route } = buildRoute();
+  const events = createEventBus();
+  const entered = [];
+  events.on('segment:enter', ({ segmentId }) => entered.push(segmentId));
+  const trip = createTrip({ route, network, events });
+
+  trip.advance(1e12);
+
+  assert.deepEqual(entered, route.pieces.map((p) => p.segmentId));
+});

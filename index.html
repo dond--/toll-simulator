@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulace trasy a mýtného</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <span id="status">Načítám síť…</span>
+    <button id="restart" type="button" disabled>Znovu projet trasu</button>
+    <button id="reset" type="button">Nový výběr</button>
+  </header>
+  <div class="map-wrap">
+    <div id="map"></div>
+    <aside class="legend">
+      <h2>Úseky</h2>
+      <ul>
+        <li><span class="swatch free"></span>Bez zpoplatnění</li>
+        <li><span class="swatch blocked"></span>Zakázaný</li>
+        <li><span class="swatch toll-a"></span>Třída A (1 Kč/km)</li>
+        <li><span class="swatch toll-b"></span>Třída B (10 Kč/km)</li>
+        <li><span class="swatch toll-c"></span>Třída C (100 Kč/km)</li>
+        <li><span class="swatch route"></span>Plánovaná trasa</li>
+      </ul>
+      <p class="hint">Pravé tlačítko na úseku změní zpoplatnění.</p>
+    </aside>
+    <aside class="panel" id="toll-panel"></aside>
+    <div class="toast" id="toast" hidden></div>
+    <aside class="dashboard" id="dashboard" hidden></aside>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -290,5 +290,5 @@ body {
 
 #map.pick-goal,
 #map.pick-goal .leaflet-interactive {
-  cursor: cell !important;
+  cursor: crosshair !important;
 }

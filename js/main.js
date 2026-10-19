@@ -28,7 +28,7 @@ attachTollEditor(map, network, lines);
 
 const events = createEventBus();
 const tollSettings = createTollSettings();
-createTollPanel(document.getElementById('toll-panel'), tollSettings);
+const tollPanel = createTollPanel(document.getElementById('toll-panel'), tollSettings);
 const notify = createToast(document.getElementById('toast'));
 events.on('toll:violation', ({ segmentId, tollClass }) => {
   notify(`Porušení: úsek ${segmentId} (třída ${tollClass}) není kryt platným předplatným.`);
@@ -36,7 +36,7 @@ events.on('toll:violation', ({ segmentId, tollClass }) => {
 
 const restartButton = document.getElementById('restart');
 const dashboard = createDashboard(document.getElementById('dashboard'));
-const trips = createTripController({ map, network, events, statusEl, restartButton, dashboard, settings: tollSettings });
+const trips = createTripController({ map, network, events, statusEl, restartButton, dashboard, tollPanel, settings: tollSettings });
 restartButton.addEventListener('click', trips.restart);
 const planner = createPlanner(map, network, statusEl, { onRoute: trips.start, onClear: trips.stop });
 document.getElementById('reset').addEventListener('click', planner.reset);

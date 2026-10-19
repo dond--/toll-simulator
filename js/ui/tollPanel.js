@@ -20,15 +20,20 @@ export function createTollPanel(root, settings) {
   const fromEl = root.querySelector('input[name="validFrom"]');
   const untilEl = root.querySelector('input[name="validUntil"]');
 
+  let locked = false;
+
   function render() {
-    for (const input of modeInputs) input.checked = input.value === settings.mode;
+    for (const input of modeInputs) {
+      input.checked = input.value === settings.mode;
+      input.disabled = locked;
+    }
     typeEl.value = settings.type;
     fromEl.value = toInputValue(settings.validFrom);
     untilEl.value = toInputValue(settings.validUntil);
-    const subscription = settings.mode === 'subscription';
-    typeEl.disabled = !subscription;
-    fromEl.disabled = !subscription;
-    untilEl.disabled = !subscription;
+    const subscriptionDisabled = locked || settings.mode !== 'subscription';
+    typeEl.disabled = subscriptionDisabled;
+    fromEl.disabled = subscriptionDisabled;
+    untilEl.disabled = subscriptionDisabled;
   }
 
   root.addEventListener('change', ({ target }) => {
@@ -40,6 +45,13 @@ export function createTollPanel(root, settings) {
   });
 
   render();
+
+  return {
+    setLocked(value) {
+      locked = value;
+      render();
+    },
+  };
 }
 
 function toInputValue(ms) {

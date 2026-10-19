@@ -7,7 +7,7 @@ import { createSummaryTip } from './summaryTip.js';
 
 const MAX_FRAME_MS = 250;
 
-export function createTripController({ map, network, events, statusEl, restartButton, dashboard, settings }) {
+export function createTripController({ map, network, events, statusEl, restartButton, dashboard, tollPanel, settings }) {
   let route = null;
   let trip = null;
   let ledger = null;
@@ -51,6 +51,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
     lastTs = null;
     frame = requestAnimationFrame(tick);
     restartButton.disabled = false;
+    tollPanel.setLocked(true);
   }
 
   function halt() {
@@ -61,6 +62,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
     car?.remove();
     car = null;
     trip = null;
+    tollPanel.setLocked(false);
   }
 
   function tick(now) {
@@ -74,6 +76,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
     if (state.finished) {
       frame = null;
       dashboard.clear();
+      tollPanel.setLocked(false);
       showSummary(state);
       return;
     }

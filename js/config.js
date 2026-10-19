@@ -10,5 +10,6 @@ export const COLORS = {
   toll: { A: '#ffb74d', B: '#f57c00', C: '#bf360c' },
   route: '#0066ff',
   start: '#2e7d32',
+  snapPreview: '#9e9e9e',
   goal: '#8e24aa',
 };

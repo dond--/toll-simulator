@@ -283,3 +283,12 @@ body {
   height: 12px;
   border-radius: 3px;
 }
+#map.pick-start,
+#map.pick-start .leaflet-interactive {
+  cursor: crosshair !important;
+}
+
+#map.pick-goal,
+#map.pick-goal .leaflet-interactive {
+  cursor: cell !important;
+}

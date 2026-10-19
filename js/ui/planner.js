@@ -51,6 +51,7 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
   }
 
   function snapNear(event) {
+    if (start && goal) return null;
     const hit = snapToNetwork(network, [event.latlng.lat, event.latlng.lng]);
     if (!hit) return null;
     const distancePx = event.containerPoint.distanceTo(map.latLngToContainerPoint(hit.point));

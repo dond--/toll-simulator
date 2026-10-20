@@ -88,13 +88,6 @@ body {
 .swatch.toll-b { background: #f57c00; }
 .swatch.toll-c { background: #bf360c; }
 .swatch.route { background: #0066ff; }
-.hint {
-  max-width: 220px;
-  margin: 8px 0 0;
-  color: #555;
-  font-size: 12px;
-}
-
 .toll-editor strong {
   display: block;
   margin-bottom: 6px;
@@ -136,6 +129,66 @@ body {
   display: inline-flex;
   align-items: center;
   padding: 6px 8px;
+}
+
+.help-wrap {
+  position: relative;
+}
+
+.help-button {
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
+.help-popup {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 2000;
+  width: 380px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+}
+
+.help-popup::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+.help-wrap:hover .help-popup,
+.help-wrap:focus-within .help-popup {
+  display: block;
+}
+
+.help-popup table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.help-popup td {
+  padding: 4px 6px;
+  vertical-align: top;
+  border-top: 1px solid #e5e7eb;
+}
+
+.help-popup td:first-child {
+  width: 1%;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.help-popup td svg {
+  display: block;
 }
 
 .topbar button:disabled {

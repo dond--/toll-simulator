@@ -12,7 +12,6 @@ export function createTollPanel(root, settings) {
     </label>
     <label>Platí od <input type="datetime-local" name="validFrom"></label>
     <label>Platí do <input type="datetime-local" name="validUntil"></label>
-    <p class="hint">Změny platí pro další jízdu.</p>
   `;
 
   const modeInputs = root.querySelectorAll('input[name="mode"]');

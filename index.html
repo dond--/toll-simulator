@@ -19,6 +19,28 @@
     </button>
     <button id="restart" type="button" disabled>Znovu projet trasu</button>
     <button id="reset" type="button">Nový výběr</button>
+    <div class="help-wrap">
+      <button id="help" class="icon-button help-button" type="button" aria-label="Nápověda" aria-describedby="help-popup">?</button>
+      <div id="help-popup" class="help-popup" role="tooltip">
+        <table>
+          <tr><td>Nový výběr</td><td>Zadání nového startu / cíle</td></tr>
+          <tr><td>Znovu projet trasu</td><td>Opakovaně spustí průjezd trasou</td></tr>
+          <tr><td><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></td><td>Zoom na trasu</td></tr>
+          <tr><td>Zrychlení</td><td>Faktor zrychlení průjezdu trasou</td></tr>
+          <tr><td>Ovládání myší</td><td>Kliknutí levým tlačítkem – posun mapy</td></tr>
+          <tr><td></td><td>Kolečko – zoom</td></tr>
+          <tr><td></td><td>Kliknutí pravým tlačítkem – změna zpoplatnění</td></tr>
+          <tr><td></td><td>Ctrl+kliknutí / Ctrl+tažení levým tlačítkem – výběr více úseků</td></tr>
+          <tr><td>Změna výběru mýtného</td><td>Projeví se při další jízdě</td></tr>
+          <tr><td>Klávesa d</td><td>Přidá do výběru všechny dálnice (motorway)</td></tr>
+          <tr><td>Klávesa m</td><td>Přidá do výběru všechny dálniční nájezdy a sjezdy (motorway_link)</td></tr>
+          <tr><td>Klávesa p</td><td>Přidá do výběru všechny silnice I. třídy (primary)</td></tr>
+          <tr><td>Klávesa s</td><td>Přidá do výběru všechny silnice II. třídy (secondary)</td></tr>
+          <tr><td>Klávesa t</td><td>Přidá do výběru všechny silnice III. třídy (tertiary)</td></tr>
+          <tr><td>Klávesa Esc</td><td>Zruší výběr úseků</td></tr>
+        </table>
+      </div>
+    </div>
   </header>
   <div class="map-wrap">
     <div id="map"></div>
@@ -32,7 +54,6 @@
         <li><span class="swatch toll-c"></span>Třída C (100 Kč/km)</li>
         <li><span class="swatch route"></span>Plánovaná trasa</li>
       </ul>
-      <p class="hint">Pravé tlačítko na úseku změní zpoplatnění. Ctrl+klik nebo Ctrl+tažení (na macOS Command) vybere více úseků.</p>
     </aside>
     <aside class="panel" id="toll-panel"></aside>
     <div class="toast" id="toast" hidden></div>

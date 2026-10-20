@@ -17,7 +17,7 @@ const { network, label } = await loadInitialNetwork(new URLSearchParams(location
 const { ok, errors } = validateNetwork(network);
 
 if (ok) {
-  statusEl.textContent = `Síť je v pořádku: ${label}, ${network.nodes.size} uzlů, ${network.segments.size} úseků. Klikněte na „Nový výběr“ a zadejte trasu.`;
+  statusEl.textContent = `Síť je v pořádku: ${label}, ${network.nodes.size} uzlů, ${network.segments.size} úseků.`;
 } else {
   statusEl.textContent = `Chyby sítě: ${errors.join(' ')}`;
   console.error(errors);

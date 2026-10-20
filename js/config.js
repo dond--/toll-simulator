@@ -11,4 +11,5 @@ export const COLORS = {
   snapPreview: '#9e9e9e',
   goal: '#8e24aa',
   selection: '#ffeb3b',
+  record: '#00c853',
 };

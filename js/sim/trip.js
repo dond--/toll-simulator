@@ -1,10 +1,12 @@
 import { pointAt } from '../network/geo.js';
+import { createOnBoardUnit } from './obu.js';
 
 const MS_PER_HOUR = 3600000;
 
 export function createTrip({ route, network, events }) {
   const { pieces } = route;
-  const state = { distanceKm: 0, totalKm: route.lengthKm, simMs: 0, finished: false };
+  const state = { distanceKm: 0, totalKm: route.lengthKm, simMs: 0, finished: false, recordedPositions: 0 };
+  const obu = createOnBoardUnit();
   let index = 0;
   let offsetKm = 0;
 
@@ -36,6 +38,7 @@ export function createTrip({ route, network, events }) {
           events.emit('segment:enter', { segmentId: pieces[index].segmentId, lengthKm: pieces[index].lengthKm, simMs: state.simMs });
         }
       }
+      state.recordedPositions = obu.advanceTo(state.simMs);
     }
   }
 

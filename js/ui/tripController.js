@@ -6,6 +6,13 @@ import { tollRows } from './dashboard.js';
 import { createSummaryTip } from './summaryTip.js';
 
 const MAX_FRAME_MS = 250;
+const RECORD_FLASH_MS = 150;
+const BLINK_MIN_MS = 250;
+const BLINK_MAX_MS = 850;
+
+function nextBlinkDelay() {
+  return BLINK_MIN_MS + Math.random() * (BLINK_MAX_MS - BLINK_MIN_MS);
+}
 
 export function createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings, getTimeScale }) {
   let route = null;
@@ -13,6 +20,10 @@ export function createTripController({ map, network, events, statusEl, restartBu
   let ledger = null;
   let tripSettings = null;
   let car = null;
+  let dot = null;
+  let flashUntil = 0;
+  let nextBlinkAt = 0;
+  let flashShown = false;
   let frame = null;
   let lastTs = null;
   const summaryTip = createSummaryTip(statusEl);
@@ -41,12 +52,22 @@ export function createTripController({ map, network, events, statusEl, restartBu
     tripSettings = { ...settings };
     ledger = createTollLedger({ network, events, settings: tripSettings, startedAt: Date.now() });
     trip = createTrip({ route, network, events });
+    flashUntil = 0;
+    nextBlinkAt = 0;
+    flashShown = false;
     car = L.circleMarker(trip.carPosition(), {
       radius: 7,
       color: COLORS.route,
       weight: 3,
       fillColor: '#ffffff',
       fillOpacity: 1,
+      interactive: false,
+    }).addTo(map);
+    dot = L.circleMarker(trip.carPosition(), {
+      radius: 3,
+      stroke: false,
+      fillColor: COLORS.record,
+      fillOpacity: 0,
       interactive: false,
     }).addTo(map);
     lastTs = null;
@@ -63,6 +84,8 @@ export function createTripController({ map, network, events, statusEl, restartBu
     ledger = null;
     car?.remove();
     car = null;
+    dot?.remove();
+    dot = null;
     trip = null;
     tollPanel.setLocked(false);
   }
@@ -72,8 +95,19 @@ export function createTripController({ map, network, events, statusEl, restartBu
       trip.advance(Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale());
     }
     lastTs = now;
+    if (now >= nextBlinkAt) {
+      flashUntil = now + RECORD_FLASH_MS;
+      nextBlinkAt = now + nextBlinkDelay();
+    }
     const { state } = trip;
-    car.setLatLng(trip.carPosition());
+    const position = trip.carPosition();
+    car.setLatLng(position);
+    dot.setLatLng(position);
+    const flashing = now < flashUntil;
+    if (flashing !== flashShown) {
+      flashShown = flashing;
+      dot.setStyle({ fillOpacity: flashing ? 1 : 0 });
+    }
 
     if (state.finished) {
       frame = null;
@@ -86,6 +120,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
       distanceKm: state.distanceKm,
       totalKm: state.totalKm,
       simMs: state.simMs,
+      recordedPositions: state.recordedPositions,
       ledger: ledger.state,
       showBill: tripSettings.mode === 'postFactum',
       showViolations: tripSettings.mode === 'subscription',
@@ -99,7 +134,10 @@ export function createTripController({ map, network, events, statusEl, restartBu
     const km = ledger.state.tolledKmByClass;
     const bill = postFactum ? ` · celkové mýtné: ${formatDecimal(ledger.state.bill)} Kč` : '';
     statusEl.textContent = `Cíl dosažen: ${formatDecimal(state.distanceKm)} km za ${formatDuration(state.simMs)}\nDélka zpoplatněných úseků: ${formatDecimal(km.A + km.B + km.C)} km${bill}`;
-    summaryTip.set(tollRows(ledger.state, postFactum, !postFactum));
+    summaryTip.set([
+      { label: 'Zaznamenané polohy', value: String(state.recordedPositions) },
+      ...tollRows(ledger.state, postFactum, !postFactum),
+    ]);
   }
 
   function isArrived() {

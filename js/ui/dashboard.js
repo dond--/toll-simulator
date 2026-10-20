@@ -23,11 +23,12 @@ export function createDashboard(root) {
   const list = root.querySelector('dl');
 
   return {
-    update({ distanceKm, totalKm, simMs, ledger, showBill, showViolations }) {
+    update({ distanceKm, totalKm, simMs, recordedPositions, ledger, showBill, showViolations }) {
       root.hidden = false;
       const rows = [
         { label: 'Ujeto', value: `${formatDecimal(distanceKm)} / ${formatDecimal(totalKm)} km` },
         { label: 'Simulovaný čas', value: formatDuration(simMs) },
+        { label: 'Zaznamenané polohy', value: String(recordedPositions) },
         ...tollRows(ledger, showBill, showViolations),
       ];
       list.innerHTML = rows.map(({ label, value }) => `<dt>${label}</dt><dd>${value}</dd>`).join('');

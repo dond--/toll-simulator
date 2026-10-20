@@ -46,6 +46,10 @@ window.addEventListener('keydown', (event) => {
     trips.zoomToRoute();
     return;
   }
+  if (key === 'n') {
+    resetPlanning();
+    return;
+  }
   const roadClass = ROAD_CLASS_BY_KEY[key];
   if (!roadClass) return;
   selection.select(segmentIdsByRoadClass(network.segments, roadClass));
@@ -71,10 +75,11 @@ const trips = createTripController({ map, network, events, statusEl, restartButt
 restartButton.addEventListener('click', trips.restart);
 zoomButton.addEventListener('click', trips.zoomToRoute);
 const planner = createPlanner(map, network, statusEl, { onRoute: trips.start, onClear: trips.stop });
-document.getElementById('reset').addEventListener('click', () => {
+function resetPlanning() {
   planner.reset();
   selection.clear();
-});
+}
+document.getElementById('reset').addEventListener('click', resetPlanning);
 attachTollEditor(map, network, lines, {
   canEdit: (segment) => planner.isIdle() || (trips.isArrived() && !trips.isOnRoute(segment.id)),
   editNote: (targets) => {

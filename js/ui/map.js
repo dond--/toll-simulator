@@ -1,5 +1,5 @@
 import { formatDecimal } from '../format.js';
-import { COLORS } from '../config.js';
+import { COLORS, DEFAULT_ROAD_STYLE, ROAD_STYLE } from '../config.js';
 
 export function createMap(elementId) {
   const map = L.map(elementId);
@@ -31,9 +31,10 @@ export function updateSegmentLine(line, segment) {
 }
 
 function segmentStyle(segment) {
-  if (segment.blocked) return { color: COLORS.blocked, weight: 4, dashArray: '8 6' };
-  if (segment.tollClass) return { color: COLORS.toll[segment.tollClass], weight: 6, dashArray: null };
-  return { color: COLORS.free, weight: 4, dashArray: null };
+  const { weight } = ROAD_STYLE[segment.roadClass] ?? DEFAULT_ROAD_STYLE;
+  if (segment.blocked) return { color: COLORS.blocked, weight, dashArray: '8 6' };
+  if (segment.tollClass) return { color: COLORS.toll[segment.tollClass], weight, dashArray: null };
+  return { ...(ROAD_STYLE[segment.roadClass] ?? DEFAULT_ROAD_STYLE), dashArray: null };
 }
 
 function describeSegment(segment) {

@@ -57,6 +57,7 @@ export function generateNetwork(options = {}) {
       coords,
       lengthKm: polylineLengthKm(coords),
       speedKmh: isMainRoad ? o.mainRoadSpeedKmh : o.localRoadSpeedKmh,
+      oneway: null,
       blocked,
       tollClass,
     });

@@ -1,6 +1,6 @@
 import { polylineLengthKm } from './geo.js';
 
-const DRIVABLE_HIGHWAY = /^(motorway|trunk|primary|secondary|tertiary|unclassified|residential)(_link)?$/;
+export const DRIVABLE_HIGHWAY = /^(motorway|trunk|primary|secondary|tertiary|unclassified|residential)(_link)?$/;
 
 const DEFAULT_SPEED_KMH = {
   motorway: 110,
@@ -20,6 +20,15 @@ const DEFAULT_SPEED_KMH = {
 const CZ_SPEED_KMH = { 'CZ:urban': 50, 'CZ:rural': 90, 'CZ:motorway': 130 };
 
 const round6 = (value) => Math.round(value * 1e6) / 1e6;
+
+export function buildOverpassQuery(relationId) {
+  return `[out:json][timeout:180];
+relation(${relationId});
+map_to_area->.area;
+way["highway"~"${DRIVABLE_HIGHWAY.source}"](area.area);
+(._;>;);
+out body;`;
+}
 
 export function buildNetworkFromOsm({ elements }) {
   const osmNodes = new Map();
@@ -48,11 +57,13 @@ export function buildNetworkFromOsm({ elements }) {
       const to = ids.at(-1);
       if (from === to) continue;
       const coords = ids.map((id) => [round6(osmNodes.get(id).lat), round6(osmNodes.get(id).lon)]);
-      pieces.push({ from, to, coords, speedKmh: speedOf(way) });
+      pieces.push({ from, to, coords, speedKmh: speedOf(way), oneway: onewayOf(way) });
     }
   }
 
   const kept = keepLargestComponent(pieces);
+  const keptSet = new Set(kept);
+  const droppedPieces = pieces.filter((piece) => !keptSet.has(piece));
   const nodes = new Map();
   const segments = new Map();
   for (const piece of kept) {
@@ -70,16 +81,28 @@ export function buildNetworkFromOsm({ elements }) {
       coords: piece.coords,
       lengthKm: polylineLengthKm(piece.coords),
       speedKmh: piece.speedKmh,
+      oneway: piece.oneway,
       blocked: false,
       tollClass: null,
     });
   }
 
-  return { nodes, segments };
+  const dropped = {
+    segments: droppedPieces.length,
+    km: droppedPieces.reduce((sum, piece) => sum + polylineLengthKm(piece.coords), 0),
+  };
+
+  return { nodes, segments, dropped };
 }
 
 function nodeId(osmId) {
   return `n${osmId}`;
+}
+
+function onewayOf({ tags }) {
+  if (tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true') return 'from-to';
+  if (tags.oneway === '-1') return 'to-from';
+  return null;
 }
 
 function speedOf(way) {

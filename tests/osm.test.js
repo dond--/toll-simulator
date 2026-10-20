@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildNetworkFromOsm } from '../js/network/osm.js';
+import { buildNetworkFromOsm, buildOverpassQuery, DRIVABLE_HIGHWAY } from '../js/network/osm.js';
 import { validateNetwork } from '../js/network/validate.js';
 
 const node = (id, lat, lon) => ({ type: 'node', id, lat, lon });
@@ -44,4 +44,34 @@ test('nepojízdné cesty a odpojené části sítě se vynechají', () => {
 
 test('výsledná síť je validní', () => {
   assert.deepEqual(validateNetwork({ nodes, segments }).errors, []);
+});
+
+test('jednosměrka se uloží jako směr vůči pořadí uzlů cesty', () => {
+  const { segments } = buildNetworkFromOsm({
+    elements: [
+      node(1, 50, 14),
+      node(2, 50, 14.01),
+      node(3, 50, 14.02),
+      way(200, [1, 2], { highway: 'primary', oneway: 'yes' }),
+      way(201, [2, 3], { highway: 'primary', oneway: '-1' }),
+      way(202, [3, 1], { highway: 'primary' }),
+    ],
+  });
+  const fromNode = (id) => [...segments.values()].find((s) => s.from === id);
+  assert.equal(fromNode('n1').oneway, 'from-to');
+  assert.equal(fromNode('n2').oneway, 'to-from');
+  assert.equal(fromNode('n3').oneway, null);
+});
+
+test('odpojené části se počítají do souhrnu vynechaných úseků', () => {
+  const { dropped } = buildNetworkFromOsm({ elements });
+  assert.equal(dropped.segments, 1);
+  assert.ok(dropped.km > 0);
+});
+
+test('dotaz pro území používá relaci a stejný filtr silnic', () => {
+  const query = buildOverpassQuery(20127151);
+  assert.match(query, /relation\(20127151\);/);
+  assert.match(query, /map_to_area->\.area;/);
+  assert.ok(query.includes(DRIVABLE_HIGHWAY.source));
 });

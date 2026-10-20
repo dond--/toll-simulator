@@ -66,10 +66,13 @@ async function loadInitialNetwork(params) {
     const seed = Number(params.get('seed')) || 1;
     return { network: generateNetwork({ seed }), label: `záložní síť (seed ${seed})` };
   }
+  const city = params.get('city') === 'true';
+  const file = city ? 'data/beroun.json' : 'data/beroun-orp.json';
+  const label = city ? 'město Beroun (OSM)' : 'ORP Beroun (OSM)';
   try {
-    return { network: await loadNetwork('data/beroun.json'), label: 'Beroun (OSM)' };
+    return { network: await loadNetwork(file), label };
   } catch (error) {
     console.error(error);
-    return { network: generateNetwork({ seed: 1 }), label: 'záložní síť (seed 1), Berouna se nepodařilo načíst' };
+    return { network: generateNetwork({ seed: 1 }), label: 'záložní síť (seed 1), síť Berouna se nepodařilo načíst' };
   }
 }

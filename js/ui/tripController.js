@@ -2,6 +2,7 @@ import { COLORS } from '../config.js';
 import { formatDecimal, formatDuration } from '../format.js';
 import { createTollLedger } from '../tolls/ledger.js';
 import { createTrip } from '../sim/trip.js';
+import { planJunctionStops } from '../sim/stops.js';
 import { tollRows } from './dashboard.js';
 import { createSummaryTip } from './summaryTip.js';
 
@@ -9,9 +10,11 @@ const MAX_FRAME_MS = 250;
 const RECORD_FLASH_MS = 150;
 const BLINK_MIN_MS = 250;
 const BLINK_MAX_MS = 850;
+const STOP_MIN_MS = 500;
+const STOP_MAX_MS = 1500;
 
-function nextBlinkDelay() {
-  return BLINK_MIN_MS + Math.random() * (BLINK_MAX_MS - BLINK_MIN_MS);
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
 }
 
 export function createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings, getTimeScale }) {
@@ -23,6 +26,7 @@ export function createTripController({ map, network, events, statusEl, restartBu
   let dot = null;
   let flashUntil = 0;
   let nextBlinkAt = 0;
+  let pauseUntil = 0;
   let flashShown = false;
   let frame = null;
   let lastTs = null;
@@ -51,9 +55,10 @@ export function createTripController({ map, network, events, statusEl, restartBu
     summaryTip.clear();
     tripSettings = { ...settings };
     ledger = createTollLedger({ network, events, settings: tripSettings, startedAt: Date.now() });
-    trip = createTrip({ route, network, events });
+    trip = createTrip({ route, network, events, stops: planJunctionStops(route, network, Math.random) });
     flashUntil = 0;
     nextBlinkAt = 0;
+    pauseUntil = 0;
     flashShown = false;
     car = L.circleMarker(trip.carPosition(), {
       radius: 7,
@@ -91,13 +96,15 @@ export function createTripController({ map, network, events, statusEl, restartBu
   }
 
   function tick(now) {
-    if (lastTs !== null) {
-      trip.advance(Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale());
+    if (lastTs !== null && now >= pauseUntil) {
+      if (trip.advance(Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale())) {
+        pauseUntil = now + randomBetween(STOP_MIN_MS, STOP_MAX_MS);
+      }
     }
     lastTs = now;
     if (now >= nextBlinkAt) {
       flashUntil = now + RECORD_FLASH_MS;
-      nextBlinkAt = now + nextBlinkDelay();
+      nextBlinkAt = now + randomBetween(BLINK_MIN_MS, BLINK_MAX_MS);
     }
     const { state } = trip;
     const position = trip.carPosition();

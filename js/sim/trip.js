@@ -3,7 +3,7 @@ import { createOnBoardUnit } from './obu.js';
 
 const MS_PER_HOUR = 3600000;
 
-export function createTrip({ route, network, events }) {
+export function createTrip({ route, network, events, stops = new Set() }) {
   const { pieces } = route;
   const state = { distanceKm: 0, totalKm: route.lengthKm, simMs: 0, finished: false, recordedPositions: 0 };
   const obu = createOnBoardUnit();
@@ -14,6 +14,7 @@ export function createTrip({ route, network, events }) {
 
   function advance(simDeltaMs) {
     let remainingMs = simDeltaMs;
+    let stopped = false;
     while (remainingMs > 0 && !state.finished) {
       const piece = pieces[index];
       const speedKmh = network.segments.get(piece.segmentId).speedKmh;
@@ -30,16 +31,22 @@ export function createTrip({ route, network, events }) {
         state.simMs += msToEnd;
         remainingMs -= msToEnd;
         offsetKm = 0;
+        const leftPiece = index;
         index++;
         if (index === pieces.length) {
           state.finished = true;
           events.emit('trip:finish', { simMs: state.simMs });
         } else {
           events.emit('segment:enter', { segmentId: pieces[index].segmentId, lengthKm: pieces[index].lengthKm, simMs: state.simMs });
+          if (stops.has(leftPiece)) {
+            stopped = true;
+            remainingMs = 0;
+          }
         }
       }
       state.recordedPositions = obu.advanceTo(state.simMs);
     }
+    return stopped;
   }
 
   function carPosition() {

@@ -63,6 +63,20 @@ test('jednosměrka se uloží jako směr vůči pořadí uzlů cesty', () => {
   assert.equal(fromNode('n3').oneway, null);
 });
 
+test('třída silnice z tagu highway se uloží u úseku', () => {
+  const { segments } = buildNetworkFromOsm({
+    elements: [
+      node(1, 50, 14),
+      node(2, 50, 14.01),
+      node(3, 50, 14.02),
+      way(400, [1, 2], { highway: 'motorway' }),
+      way(401, [2, 3], { highway: 'primary_link' }),
+    ],
+  });
+  assert.equal([...segments.values()].find((s) => s.from === 'n1').roadClass, 'motorway');
+  assert.equal([...segments.values()].find((s) => s.from === 'n2').roadClass, 'primary_link');
+});
+
 test('odpojené části se počítají do souhrnu vynechaných úseků', () => {
   const { dropped } = buildNetworkFromOsm({ elements });
   assert.equal(dropped.segments, 1);

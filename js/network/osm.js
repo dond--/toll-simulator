@@ -57,7 +57,7 @@ export function buildNetworkFromOsm({ elements }) {
       const to = ids.at(-1);
       if (from === to) continue;
       const coords = ids.map((id) => [round6(osmNodes.get(id).lat), round6(osmNodes.get(id).lon)]);
-      pieces.push({ from, to, coords, speedKmh: speedOf(way), oneway: onewayOf(way) });
+      pieces.push({ from, to, coords, speedKmh: speedOf(way), oneway: onewayOf(way), roadClass: way.tags.highway });
     }
   }
 
@@ -82,6 +82,7 @@ export function buildNetworkFromOsm({ elements }) {
       lengthKm: polylineLengthKm(piece.coords),
       speedKmh: piece.speedKmh,
       oneway: piece.oneway,
+      roadClass: piece.roadClass,
       blocked: false,
       tollClass: null,
     });

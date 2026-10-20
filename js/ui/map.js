@@ -3,10 +3,17 @@ import { COLORS, DEFAULT_ROAD_STYLE, ROAD_STYLE } from '../config.js';
 
 export function createMap(elementId) {
   const map = L.map(elementId);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
+    className: 'basemap-osm',
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map);
+  });
+  const orthophoto = L.tileLayer('https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.cuzk.cz">ČÚZK</a>',
+  });
+  osm.addTo(map);
+  L.control.layers({ Mapa: osm, Ortofoto: orthophoto }, null, { position: 'bottomright' }).addTo(map);
   return map;
 }
 

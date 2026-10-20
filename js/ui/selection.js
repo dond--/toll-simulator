@@ -32,6 +32,10 @@ export function segmentsInBounds(segments, bounds) {
   return ids;
 }
 
+export function segmentIdsByRoadClass(segments, roadClass) {
+  return [...segments.values()].filter((segment) => segment.roadClass === roadClass).map((segment) => segment.id);
+}
+
 export function createSelection(map, lines, segments) {
   const selected = new Set();
   const halos = L.layerGroup().addTo(map);
@@ -81,7 +85,7 @@ export function createSelection(map, lines, segments) {
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') clear();
-  });
+  }, true);
 
   container.addEventListener(
     'mousedown',
@@ -138,5 +142,10 @@ export function createSelection(map, lines, segments) {
     true,
   );
 
-  return { clear, targetsFor };
+  function select(ids) {
+    for (const id of ids) selected.add(id);
+    render();
+  }
+
+  return { clear, select, targetsFor };
 }

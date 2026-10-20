@@ -6,7 +6,7 @@ import { createMap, renderNetwork } from './ui/map.js';
 import { attachTollEditor } from './ui/tollEditor.js';
 import { createTripController } from './ui/tripController.js';
 import { createPlanner } from './ui/planner.js';
-import { createSelection } from './ui/selection.js';
+import { createSelection, segmentIdsByRoadClass } from './ui/selection.js';
 import { createTollSettings } from './tolls/policy.js';
 import { createTollPanel } from './ui/tollPanel.js';
 import { createToast } from './ui/toast.js';
@@ -26,6 +26,18 @@ if (ok) {
 const map = createMap('map');
 const lines = renderNetwork(map, network);
 const selection = createSelection(map, lines, network.segments);
+const ROAD_CLASS_BY_KEY = {
+  d: 'motorway',
+  m: 'motorway_link',
+  p: 'primary',
+  s: 'secondary',
+  t: 'tertiary',
+};
+window.addEventListener('keydown', (event) => {
+  const roadClass = ROAD_CLASS_BY_KEY[event.key.toLowerCase()];
+  if (!roadClass || event.ctrlKey || event.metaKey || event.altKey) return;
+  selection.select(segmentIdsByRoadClass(network.segments, roadClass));
+});
 
 const events = createEventBus();
 const tollSettings = createTollSettings();

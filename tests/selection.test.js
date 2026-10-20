@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isMacPlatform, segmentsInBounds } from '../js/ui/selection.js';
+import { isMacPlatform, segmentIdsByRoadClass, segmentsInBounds } from '../js/ui/selection.js';
 
 const segment = (id, coords) => ({ id, coords });
 
@@ -24,4 +24,15 @@ test('detekce macOS podle platformy', () => {
   assert.equal(isMacPlatform('macOS'), true);
   assert.equal(isMacPlatform('Win32'), false);
   assert.equal(isMacPlatform('Linux x86_64'), false);
+});
+
+test('výběr podle třídy silnice vrátí jen úseky s touto třídou', () => {
+  const segments = new Map([
+    ['s1', { id: 's1', roadClass: 'motorway' }],
+    ['s2', { id: 's2', roadClass: 'motorway_link' }],
+    ['s3', { id: 's3', roadClass: 'motorway' }],
+    ['s4', { id: 's4', roadClass: null }],
+  ]);
+  assert.deepEqual(segmentIdsByRoadClass(segments, 'motorway'), ['s1', 's3']);
+  assert.deepEqual(segmentIdsByRoadClass(segments, 'motorway_link'), ['s2']);
 });

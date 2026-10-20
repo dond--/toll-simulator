@@ -42,6 +42,10 @@ window.addEventListener('keydown', (event) => {
     selection.select(network.segments.keys());
     return;
   }
+  if (key === 'z') {
+    trips.zoomToRoute();
+    return;
+  }
   const roadClass = ROAD_CLASS_BY_KEY[key];
   if (!roadClass) return;
   selection.select(segmentIdsByRoadClass(network.segments, roadClass));

@@ -75,3 +75,17 @@ test('dotaz pro území používá relaci a stejný filtr silnic', () => {
   assert.match(query, /map_to_area->\.area;/);
   assert.ok(query.includes(DRIVABLE_HIGHWAY.source));
 });
+
+test('nulová nebo záporná maxspeed se nahradí výchozí rychlostí podle třídy', () => {
+  const { segments } = buildNetworkFromOsm({
+    elements: [
+      node(1, 50, 14),
+      node(2, 50, 14.01),
+      node(3, 50, 14.02),
+      way(300, [1, 2], { highway: 'residential', maxspeed: '0' }),
+      way(301, [2, 3], { highway: 'primary', maxspeed: '-5' }),
+    ],
+  });
+  assert.equal([...segments.values()].find((s) => s.from === 'n1').speedKmh, 30);
+  assert.equal([...segments.values()].find((s) => s.from === 'n2').speedKmh, 70);
+});

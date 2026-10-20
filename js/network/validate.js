@@ -26,6 +26,9 @@ export function validateNetwork({ nodes, segments }) {
     ) {
       errors.push(`Úsek ${segment.id} nenavazuje na své uzly.`);
     }
+    if (!(Number.isFinite(segment.speedKmh) && segment.speedKmh > 0)) {
+      errors.push(`Úsek ${segment.id} nemá kladnou rychlost.`);
+    }
     if (segment.tollClass !== null && !TOLL_CLASSES.includes(segment.tollClass)) {
       errors.push(`Úsek ${segment.id} má neznámou třídu zpoplatnění.`);
     }

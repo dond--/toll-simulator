@@ -114,7 +114,7 @@ function parseMaxspeed(value) {
   if (!value) return null;
   if (Object.hasOwn(CZ_SPEED_KMH, value)) return CZ_SPEED_KMH[value];
   const match = /^(\d+)(\s*km\/h)?$/.exec(value.trim());
-  return match ? Number(match[1]) : null;
+  return match && Number(match[1]) > 0 ? Number(match[1]) : null;
 }
 
 function keepLargestComponent(pieces) {

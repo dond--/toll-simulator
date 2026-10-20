@@ -14,10 +14,12 @@ const segment = (id, from, to, coords) => ({
   tollClass: null,
 });
 
+
 const network = (nodes, segments) => ({
   nodes: new Map(nodes.map((n) => [n.id, n])),
   segments: new Map(segments.map((s) => [s.id, s])),
 });
+
 
 const A = { id: 'a', lat: 50, lng: 14 };
 const B = { id: 'b', lat: 50.01, lng: 14 };
@@ -35,6 +37,7 @@ test('generátor je deterministický pro stejný seed', () => {
   assert.deepEqual(Array.from(first.segments.values()), Array.from(second.segments.values()));
 });
 
+
 test('řetězec úseků A-B-C je validní', () => {
   const net = network(
     [A, B, C],
@@ -46,12 +49,14 @@ test('řetězec úseků A-B-C je validní', () => {
   assert.deepEqual(validateNetwork(net).errors, []);
 });
 
+
 test('úsek odkazující na neexistující uzel je chyba', () => {
   const net = network([A, B], [segment('s1', 'a', 'x', [[50, 14], [50.01, 14]])]);
   const { ok, errors } = validateNetwork(net);
   assert.equal(ok, false);
   assert.ok(errors.some((e) => e.includes('neexistující uzel')));
 });
+
 
 test('úsek, jehož souřadnice nesedí na uzly, je chyba', () => {
   const net = network([A, B], [segment('s1', 'a', 'b', [[50, 14], [50.02, 14]])]);
@@ -60,9 +65,19 @@ test('úsek, jehož souřadnice nesedí na uzly, je chyba', () => {
   assert.ok(errors.some((e) => e.includes('nenavazuje')));
 });
 
+
 test('nesouvislá síť je chyba', () => {
   const net = network([A, B, C], [segment('s1', 'a', 'b', [[50, 14], [50.01, 14]])]);
   const { ok, errors } = validateNetwork(net);
   assert.equal(ok, false);
   assert.ok(errors.some((e) => e.includes('není souvislá')));
 });
+
+test('úsek bez kladné rychlosti je chyba sítě', () => {
+  const result = validateNetwork(
+    network([A, B], [{ ...segment('s1', 'a', 'b', [[50, 14], [50.01, 14]]), speedKmh: 0 }]),
+  );
+  assert.equal(result.ok, false);
+  assert.match(result.errors[0], /kladnou rychlost/);
+});
+

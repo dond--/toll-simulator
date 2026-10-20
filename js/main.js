@@ -32,10 +32,18 @@ const ROAD_CLASS_BY_KEY = {
   p: 'primary',
   s: 'secondary',
   t: 'tertiary',
+  r: 'residential',
 };
 window.addEventListener('keydown', (event) => {
-  const roadClass = ROAD_CLASS_BY_KEY[event.key.toLowerCase()];
-  if (!roadClass || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.target instanceof HTMLElement && event.target.closest('input, select, textarea, [contenteditable]')) return;
+  const key = event.key.toLowerCase();
+  if (key === 'a') {
+    selection.select(network.segments.keys());
+    return;
+  }
+  const roadClass = ROAD_CLASS_BY_KEY[key];
+  if (!roadClass) return;
   selection.select(segmentIdsByRoadClass(network.segments, roadClass));
 });
 

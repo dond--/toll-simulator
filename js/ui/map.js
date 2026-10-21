@@ -1,5 +1,8 @@
 import { formatDecimal } from '../format.js';
-import { COLORS, DEFAULT_ROAD_STYLE, ROAD_STYLE } from '../config.js';
+import { COLORS, DEFAULT_ROAD_STYLE, ROAD_HALO, ROAD_STYLE } from '../config.js';
+
+const BLOCKED_DASH = '8 6';
+const halos = new WeakMap();
 
 export function createMap(elementId) {
   const map = L.map(elementId);
@@ -18,12 +21,15 @@ export function createMap(elementId) {
 }
 
 export function renderNetwork(map, { nodes, segments }) {
+  const haloLayer = L.layerGroup().addTo(map);
   const layer = L.layerGroup().addTo(map);
   const lines = new Map();
   for (const segment of segments.values()) {
+    const halo = L.polyline(segment.coords, { ...haloStyle(segment), interactive: false }).addTo(haloLayer);
     const line = L.polyline(segment.coords, segmentStyle(segment))
       .bindTooltip(describeSegment(segment))
       .addTo(layer);
+    halos.set(line, halo);
     lines.set(segment.id, line);
   }
 
@@ -34,12 +40,25 @@ export function renderNetwork(map, { nodes, segments }) {
 
 export function updateSegmentLine(line, segment) {
   line.setStyle(segmentStyle(segment));
+  halos.get(line).setStyle(haloStyle(segment));
   line.setTooltipContent(describeSegment(segment));
 }
 
+function roadWeight(segment) {
+  return (ROAD_STYLE[segment.roadClass] ?? DEFAULT_ROAD_STYLE).weight;
+}
+
+function haloStyle(segment) {
+  return {
+    color: ROAD_HALO.color,
+    weight: roadWeight(segment) + 2 * ROAD_HALO.width,
+    dashArray: segment.blocked ? BLOCKED_DASH : null,
+  };
+}
+
 function segmentStyle(segment) {
-  const { weight } = ROAD_STYLE[segment.roadClass] ?? DEFAULT_ROAD_STYLE;
-  if (segment.blocked) return { color: COLORS.blocked, weight, dashArray: '8 6' };
+  const weight = roadWeight(segment);
+  if (segment.blocked) return { color: COLORS.blocked, weight, dashArray: BLOCKED_DASH };
   if (segment.tollClass) return { color: COLORS.toll[segment.tollClass], weight, dashArray: null };
   return { ...(ROAD_STYLE[segment.roadClass] ?? DEFAULT_ROAD_STYLE), dashArray: null };
 }

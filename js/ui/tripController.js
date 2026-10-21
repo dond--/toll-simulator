@@ -149,11 +149,10 @@ export function createTripController({ map, network, events, statusEl, recordDot
     const postFactum = tripSettings.mode === 'postFactum';
     const km = ledger.state.tolledKmByClass;
     const tolledKm = km.A + km.B + km.C;
-    const bill = postFactum ? ` celkové mýtné: ${formatDecimal(ledger.state.bill)} Kč` : '';
     const icon = document.createElement('span');
     icon.className = 'info-icon';
     icon.textContent = 'i';
-    statusEl.replaceChildren(icon, bill);
+    statusEl.replaceChildren(icon);
     summaryTip.set([
       { label: 'Ujetá vzdálenost', value: `${formatDecimal(state.distanceKm)} km` },
       { label: 'Celkový čas', value: formatDuration(state.simMs) },

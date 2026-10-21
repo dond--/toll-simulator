@@ -13,6 +13,7 @@ import { createToast } from './ui/toast.js';
 import { createDashboard } from './ui/dashboard.js';
 
 const statusEl = document.getElementById('status');
+const recordDot = document.getElementById('record-dot');
 const { network, label } = await loadInitialNetwork(new URLSearchParams(location.search));
 const { ok, errors } = validateNetwork(network);
 
@@ -71,7 +72,7 @@ const speedOutput = document.getElementById('speed-value');
 speedInput.addEventListener('input', () => {
   speedOutput.textContent = `${speedInput.value}×`;
 });
-const trips = createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings: tollSettings, getTimeScale: () => Number(speedInput.value) });
+const trips = createTripController({ map, network, events, statusEl, recordDot, restartButton, zoomButton, dashboard, tollPanel, settings: tollSettings, getTimeScale: () => Number(speedInput.value) });
 restartButton.addEventListener('click', trips.restart);
 zoomButton.addEventListener('click', trips.zoomToRoute);
 const planner = createPlanner(map, network, statusEl, { onRoute: trips.start, onClear: trips.stop });

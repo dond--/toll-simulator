@@ -5,7 +5,7 @@ const MS_PER_HOUR = 3600000;
 
 export function createTrip({ route, network, events, stops = new Set() }) {
   const { pieces } = route;
-  const state = { distanceKm: 0, totalKm: route.lengthKm, simMs: 0, finished: false, recordedPositions: 0 };
+  const state = { distanceKm: 0, totalKm: route.lengthKm, simMs: 0, finished: false, recordedPositions: 0, speedKmh: network.segments.get(pieces[0].segmentId).speedKmh };
   const obu = createOnBoardUnit();
   let index = 0;
   let offsetKm = 0;
@@ -15,6 +15,7 @@ export function createTrip({ route, network, events, stops = new Set() }) {
   function advance(simDeltaMs) {
     let remainingMs = simDeltaMs;
     let stopped = false;
+    if (!state.finished) state.speedKmh = network.segments.get(pieces[index].segmentId).speedKmh;
     while (remainingMs > 0 && !state.finished) {
       const piece = pieces[index];
       const speedKmh = network.segments.get(piece.segmentId).speedKmh;
@@ -37,9 +38,11 @@ export function createTrip({ route, network, events, stops = new Set() }) {
           state.finished = true;
           events.emit('trip:finish', { simMs: state.simMs });
         } else {
+          state.speedKmh = network.segments.get(pieces[index].segmentId).speedKmh;
           events.emit('segment:enter', { segmentId: pieces[index].segmentId, lengthKm: pieces[index].lengthKm, simMs: state.simMs });
           if (stops.has(leftPiece)) {
             stopped = true;
+            state.speedKmh = 0;
             remainingMs = 0;
           }
         }
@@ -54,5 +57,10 @@ export function createTrip({ route, network, events, stops = new Set() }) {
     return pointAt(pieces[index].coords, offsetKm);
   }
 
-  return { state, advance, carPosition };
+  function addWait(simDeltaMs) {
+    state.simMs += simDeltaMs;
+    state.recordedPositions = obu.advanceTo(state.simMs);
+  }
+
+  return { state, advance, addWait, carPosition };
 }

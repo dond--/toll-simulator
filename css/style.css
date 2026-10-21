@@ -24,6 +24,36 @@ body {
   flex: 1;
 }
 
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font: bold 12px/1 Georgia, serif;
+  vertical-align: middle;
+}
+
+.record-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.record-dot.on {
+  background: #00c853;
+}
+
+.record-dot[hidden] {
+  display: none;
+}
+
 .topbar button {
   padding: 6px 14px;
   border: 0;

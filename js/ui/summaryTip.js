@@ -9,7 +9,7 @@ export function createSummaryTip(anchor) {
 
   function render() {
     const heading = document.createElement('h3');
-    heading.textContent = 'Souhrn mýtného';
+    heading.textContent = 'Souhrn ujeté trasy';
     const lines = rows.map(({ label, value, tollClass, strong }) => {
       const line = document.createElement('div');
       line.className = strong ? 'summary-tip-row strong' : 'summary-tip-row';

@@ -17,7 +17,7 @@ function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
-export function createTripController({ map, network, events, statusEl, restartButton, zoomButton, dashboard, tollPanel, settings, getTimeScale }) {
+export function createTripController({ map, network, events, statusEl, recordDot, restartButton, zoomButton, dashboard, tollPanel, settings, getTimeScale }) {
   let route = null;
   let trip = null;
   let ledger = null;
@@ -53,6 +53,8 @@ export function createTripController({ map, network, events, statusEl, restartBu
   function run() {
     halt();
     summaryTip.clear();
+    recordDot.hidden = false;
+    statusEl.textContent = '';
     tripSettings = { ...settings };
     ledger = createTollLedger({ network, events, settings: tripSettings, startedAt: Date.now() });
     trip = createTrip({ route, network, events, stops: planJunctionStops(route, network, Math.random) });
@@ -92,12 +94,17 @@ export function createTripController({ map, network, events, statusEl, restartBu
     dot?.remove();
     dot = null;
     trip = null;
+    recordDot.hidden = true;
+    recordDot.classList.remove('on');
     tollPanel.setLocked(false);
   }
 
   function tick(now) {
-    if (lastTs !== null && now >= pauseUntil) {
-      if (trip.advance(Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale())) {
+    if (lastTs !== null) {
+      const simDeltaMs = Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale();
+      if (now < pauseUntil) {
+        trip.addWait(simDeltaMs);
+      } else if (trip.advance(simDeltaMs)) {
         pauseUntil = now + randomBetween(STOP_MIN_MS, STOP_MAX_MS);
       }
     }
@@ -114,10 +121,12 @@ export function createTripController({ map, network, events, statusEl, restartBu
     if (flashing !== flashShown) {
       flashShown = flashing;
       dot.setStyle({ fillOpacity: flashing ? 1 : 0 });
+      recordDot.classList.toggle('on', flashing);
     }
 
     if (state.finished) {
       frame = null;
+      recordDot.hidden = true;
       dashboard.clear();
       tollPanel.setLocked(false);
       showSummary(state);
@@ -127,21 +136,29 @@ export function createTripController({ map, network, events, statusEl, restartBu
       distanceKm: state.distanceKm,
       totalKm: state.totalKm,
       simMs: state.simMs,
+      speedKmh: state.speedKmh,
       recordedPositions: state.recordedPositions,
       ledger: ledger.state,
       showBill: tripSettings.mode === 'postFactum',
       showViolations: tripSettings.mode === 'subscription',
     });
-    statusEl.textContent = `Jízda: ${formatDecimal(state.distanceKm)} / ${formatDecimal(state.totalKm)} km · simulovaný čas ${formatDuration(state.simMs)}`;
     frame = requestAnimationFrame(tick);
   }
 
   function showSummary(state) {
     const postFactum = tripSettings.mode === 'postFactum';
     const km = ledger.state.tolledKmByClass;
-    const bill = postFactum ? ` · celkové mýtné: ${formatDecimal(ledger.state.bill)} Kč` : '';
-    statusEl.textContent = `Cíl dosažen: ${formatDecimal(state.distanceKm)} km za ${formatDuration(state.simMs)}\nDélka zpoplatněných úseků: ${formatDecimal(km.A + km.B + km.C)} km${bill}`;
+    const tolledKm = km.A + km.B + km.C;
+    const bill = postFactum ? ` celkové mýtné: ${formatDecimal(ledger.state.bill)} Kč` : '';
+    const icon = document.createElement('span');
+    icon.className = 'info-icon';
+    icon.textContent = 'i';
+    statusEl.replaceChildren(icon, bill);
     summaryTip.set([
+      { label: 'Ujetá vzdálenost', value: `${formatDecimal(state.distanceKm)} km` },
+      { label: 'Celkový čas', value: formatDuration(state.simMs) },
+      { label: 'Průměrná rychlost', value: `${formatDecimal(state.distanceKm / (state.simMs / 3600000))} km/h` },
+      { label: 'Délka zpoplatněných úseků', value: `${formatDecimal(tolledKm)} km` },
       { label: 'Zaznamenané polohy', value: String(state.recordedPositions) },
       ...tollRows(ledger.state, postFactum, !postFactum),
     ]);

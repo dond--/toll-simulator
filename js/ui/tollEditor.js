@@ -14,10 +14,18 @@ export function attachTollEditor(map, network, lines, { canEdit, editNote, selec
   for (const [id, line] of lines) {
     line.on('contextmenu', (event) => {
       L.DomEvent.preventDefault(event.originalEvent);
-      const targets = selection.targetsFor(id).map((targetId) => network.segments.get(targetId));
-      openEditor(map, event.latlng, targets, lines, { canEdit, editNote });
+      if (selection.selectedIds().length === 0) {
+        openEditor(map, event.latlng, [network.segments.get(id)], lines, { canEdit, editNote });
+      }
     });
   }
+
+  map.on('contextmenu', (event) => {
+    const ids = selection.selectedIds();
+    if (ids.length === 0) return;
+    L.DomEvent.preventDefault(event.originalEvent);
+    openEditor(map, event.latlng, ids.map((id) => network.segments.get(id)), lines, { canEdit, editNote });
+  });
 }
 
 function openEditor(map, latlng, targets, lines, { canEdit, editNote }) {

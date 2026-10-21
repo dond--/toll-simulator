@@ -92,10 +92,8 @@ export function createSelection(map, lines, segments) {
     render();
   }
 
-  function targetsFor(id) {
-    if (selected.has(id)) return [...selected];
-    clear();
-    return [id];
+  function selectedIds() {
+    return [...selected];
   }
 
   function containerPoint(event) {
@@ -177,5 +175,5 @@ export function createSelection(map, lines, segments) {
     render();
   }
 
-  return { clear, select, targetsFor };
+  return { clear, select, selectedIds };
 }

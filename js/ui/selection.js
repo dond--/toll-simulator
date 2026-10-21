@@ -21,12 +21,42 @@ export function isSelectionModifier(event) {
   return IS_MAC ? event.metaKey : event.ctrlKey;
 }
 
+function orientation(p, q, r) {
+  return Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+}
+
+function onSegment(p, q, r) {
+  return Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0])
+    && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1]);
+}
+
+function edgesIntersect(p1, p2, p3, p4) {
+  const d1 = orientation(p3, p4, p1);
+  const d2 = orientation(p3, p4, p2);
+  const d3 = orientation(p1, p2, p3);
+  const d4 = orientation(p1, p2, p4);
+  if (d1 * d2 < 0 && d3 * d4 < 0) return true;
+  return (d1 === 0 && onSegment(p3, p4, p1))
+    || (d2 === 0 && onSegment(p3, p4, p2))
+    || (d3 === 0 && onSegment(p1, p2, p3))
+    || (d4 === 0 && onSegment(p1, p2, p4));
+}
+
 export function segmentsInBounds(segments, bounds) {
+  const corners = [
+    [bounds.south, bounds.west],
+    [bounds.south, bounds.east],
+    [bounds.north, bounds.east],
+    [bounds.north, bounds.west],
+  ];
+  const inside = ([lat, lng]) => lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east;
   const ids = [];
   for (const segment of segments.values()) {
-    const touches = segment.coords.some(
-      ([lat, lng]) => lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east,
-    );
+    const { coords } = segment;
+    const touches = coords.some(inside) || coords.some((point, i) => {
+      if (i === 0) return false;
+      return corners.some((corner, j) => edgesIntersect(coords[i - 1], point, corner, corners[(j + 1) % 4]));
+    });
     if (touches) ids.push(segment.id);
   }
   return ids;

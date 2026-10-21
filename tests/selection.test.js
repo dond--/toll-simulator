@@ -19,6 +19,16 @@ test('úsek, jehož body jsou všechny mimo obdélník, se nevybere', () => {
   assert.deepEqual(segmentsInBounds(segments, { south: 50, north: 50.1, west: 14, east: 14.1 }), []);
 });
 
+test('úsek, který obdélník přejíždí bez vertexu uvnitř, se vybere', () => {
+  const segments = new Map([
+    ['across', segment('across', [[50.005, 13.9], [50.005, 14.1]])],
+    ['miss', segment('miss', [[50.02, 13.9], [50.02, 14.1]])],
+    ['corner', segment('corner', [[50.02, 13.99], [49.99, 14.02]])],
+  ]);
+  const bounds = { south: 50, north: 50.01, west: 14, east: 14.01 };
+  assert.deepEqual(segmentsInBounds(segments, bounds), ['across', 'corner']);
+});
+
 test('detekce macOS podle platformy', () => {
   assert.equal(isMacPlatform('MacIntel'), true);
   assert.equal(isMacPlatform('macOS'), true);

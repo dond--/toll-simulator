@@ -1,10 +1,9 @@
+import { junctionNodes } from '../network/topology.js';
+
 const KM_PER_STOP = 2;
 
 export function planJunctionStops(route, network, random) {
-  const degree = new Map();
-  for (const segment of network.segments.values()) {
-    for (const id of [segment.from, segment.to]) degree.set(id, (degree.get(id) ?? 0) + 1);
-  }
+  const junctions = junctionNodes(network);
 
   const { pieces } = route;
   const candidates = [];
@@ -12,7 +11,7 @@ export function planJunctionStops(route, network, random) {
     const a = network.segments.get(pieces[i].segmentId);
     const b = network.segments.get(pieces[i + 1].segmentId);
     const junction = [a.from, a.to].find((id) => id === b.from || id === b.to);
-    if (junction !== undefined && degree.get(junction) >= 3) candidates.push(i);
+    if (junction !== undefined && junctions.has(junction)) candidates.push(i);
   }
 
   const maxStops = Math.min(Math.floor(route.lengthKm / KM_PER_STOP), candidates.length);

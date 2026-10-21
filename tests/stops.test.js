@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateNetwork } from '../js/network/generate.js';
-import { createRandom } from '../js/network/random.js';
 import { pointAt } from '../js/network/geo.js';
 import { planRoute } from '../js/routing/plan.js';
 import { createEventBus } from '../js/core/events.js';
@@ -13,7 +12,7 @@ function buildRoute() {
   const free = [...network.segments.values()].filter((s) => !s.blocked);
   const from = pointAt(free[0].coords, free[0].lengthKm / 2);
   const to = pointAt(free[free.length - 1].coords, free[free.length - 1].lengthKm / 2);
-  const result = planRoute(network, from, to, createRandom(11));
+  const result = planRoute(network, from, to);
   assert.equal(result.ok, true);
   return { network, route: result.route };
 }

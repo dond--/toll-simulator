@@ -35,7 +35,7 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
   function selectGoal(point) {
     goal = point;
     goalMarker = pointMarker(point, COLORS.goal).addTo(map);
-    const result = planRoute(network, start, goal, Math.random);
+    const result = planRoute(network, start, goal);
     if (!result.ok) {
       clearLayers();
       statusEl.textContent = result.error;

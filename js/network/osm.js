@@ -17,6 +17,15 @@ const DEFAULT_SPEED_KMH = {
   residential: 30,
 };
 
+const ONEWAY_TAG_VALUES = new Map([
+  ['yes', 'from-to'],
+  ['1', 'from-to'],
+  ['true', 'from-to'],
+  ['-1', 'to-from'],
+]);
+
+const IMPLICIT_ONEWAY_HIGHWAYS = new Set(['motorway', 'motorway_link']);
+
 const CZ_SPEED_KMH = { 'CZ:urban': 50, 'CZ:rural': 90, 'CZ:motorway': 130 };
 
 const round6 = (value) => Math.round(value * 1e6) / 1e6;
@@ -61,7 +70,7 @@ export function buildNetworkFromOsm({ elements }) {
     }
   }
 
-  const kept = keepLargestComponent(pieces);
+  const kept = keepLargestStronglyConnected(pieces);
   const keptSet = new Set(kept);
   const droppedPieces = pieces.filter((piece) => !keptSet.has(piece));
   const nodes = new Map();
@@ -101,8 +110,8 @@ function nodeId(osmId) {
 }
 
 function onewayOf({ tags }) {
-  if (tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true') return 'from-to';
-  if (tags.oneway === '-1') return 'to-from';
+  if (tags.oneway !== undefined) return ONEWAY_TAG_VALUES.get(tags.oneway) ?? null;
+  if (tags.junction === 'roundabout' || IMPLICIT_ONEWAY_HIGHWAYS.has(tags.highway)) return 'from-to';
   return null;
 }
 
@@ -118,34 +127,68 @@ function parseMaxspeed(value) {
   return match && Number(match[1]) > 0 ? Number(match[1]) : null;
 }
 
-function keepLargestComponent(pieces) {
-  const adjacency = new Map();
-  const link = (a, b) => {
-    if (!adjacency.has(a)) adjacency.set(a, []);
-    adjacency.get(a).push(b);
+function keepLargestStronglyConnected(pieces) {
+  const arcs = new Map();
+  const nodeIds = new Set();
+  const addArc = (a, b) => {
+    if (!arcs.has(a)) arcs.set(a, []);
+    arcs.get(a).push(b);
   };
-  for (const piece of pieces) {
-    link(piece.from, piece.to);
-    link(piece.to, piece.from);
+  for (const { from, to, oneway } of pieces) {
+    nodeIds.add(from);
+    nodeIds.add(to);
+    if (oneway !== 'to-from') addArc(from, to);
+    if (oneway !== 'from-to') addArc(to, from);
   }
+  const largest = largestStronglyConnected(nodeIds, arcs);
+  return pieces.filter((piece) => largest.has(piece.from) && largest.has(piece.to));
+}
 
-  const seen = new Set();
+function largestStronglyConnected(nodeIds, arcs) {
+  const order = new Map();
+  const low = new Map();
+  const onStack = new Set();
+  const stack = [];
+  let counter = 0;
   let largest = new Set();
-  for (const start of adjacency.keys()) {
-    if (seen.has(start)) continue;
-    const component = new Set([start]);
-    const queue = [start];
-    seen.add(start);
-    for (let i = 0; i < queue.length; i++) {
-      for (const next of adjacency.get(queue[i])) {
-        if (seen.has(next)) continue;
-        seen.add(next);
-        component.add(next);
-        queue.push(next);
+
+  const visit = (node) => {
+    order.set(node, counter);
+    low.set(node, counter);
+    counter++;
+    stack.push(node);
+    onStack.add(node);
+    return { node, next: 0 };
+  };
+
+  for (const root of nodeIds) {
+    if (order.has(root)) continue;
+    const work = [visit(root)];
+    while (work.length > 0) {
+      const frame = work.at(-1);
+      const out = arcs.get(frame.node) ?? [];
+      if (frame.next < out.length) {
+        const child = out[frame.next++];
+        if (!order.has(child)) work.push(visit(child));
+        else if (onStack.has(child)) low.set(frame.node, Math.min(low.get(frame.node), order.get(child)));
+        continue;
+      }
+      work.pop();
+      if (work.length > 0) {
+        const parent = work.at(-1).node;
+        low.set(parent, Math.min(low.get(parent), low.get(frame.node)));
+      }
+      if (low.get(frame.node) === order.get(frame.node)) {
+        const component = new Set();
+        let member;
+        do {
+          member = stack.pop();
+          onStack.delete(member);
+          component.add(member);
+        } while (member !== frame.node);
+        if (component.size > largest.size) largest = component;
       }
     }
-    if (component.size > largest.size) largest = component;
   }
-
-  return pieces.filter((piece) => largest.has(piece.from));
+  return largest;
 }

@@ -55,6 +55,7 @@ test('jednosměrka se uloží jako směr vůči pořadí uzlů cesty', () => {
       way(200, [1, 2], { highway: 'primary', oneway: 'yes' }),
       way(201, [2, 3], { highway: 'primary', oneway: '-1' }),
       way(202, [3, 1], { highway: 'primary' }),
+      way(203, [2, 1], { highway: 'primary' }),
     ],
   });
   const fromNode = (id) => [...segments.values()].find((s) => s.from === id);
@@ -71,6 +72,7 @@ test('třída silnice z tagu highway se uloží u úseku', () => {
       node(3, 50, 14.02),
       way(400, [1, 2], { highway: 'motorway' }),
       way(401, [2, 3], { highway: 'primary_link' }),
+      way(402, [3, 1], { highway: 'trunk' }),
     ],
   });
   assert.equal([...segments.values()].find((s) => s.from === 'n1').roadClass, 'motorway');
@@ -102,4 +104,57 @@ test('nulová nebo záporná maxspeed se nahradí výchozí rychlostí podle tř
   });
   assert.equal([...segments.values()].find((s) => s.from === 'n1').speedKmh, 30);
   assert.equal([...segments.values()].find((s) => s.from === 'n2').speedKmh, 70);
+});
+
+test('kruhový objezd a dálnice jsou jednosměrné, pokud nemají jiný tag', () => {
+  const { segments } = buildNetworkFromOsm({
+    elements: [
+      node(1, 50, 14),
+      node(2, 50, 14.01),
+      node(3, 50, 14.02),
+      node(4, 50, 14.03),
+      way(500, [1, 2], { highway: 'trunk', junction: 'roundabout' }),
+      way(501, [2, 3], { highway: 'motorway' }),
+      way(502, [3, 4], { highway: 'motorway', oneway: 'no' }),
+      way(503, [4, 1], { highway: 'trunk' }),
+    ],
+  });
+  const onewayFrom = (id) => [...segments.values()].find((s) => s.from === id).oneway;
+  assert.equal(onewayFrom('n1'), 'from-to');
+  assert.equal(onewayFrom('n2'), 'from-to');
+  assert.equal(onewayFrom('n3'), null);
+});
+
+test('jednosměrka vedoucí do slepé uličky se vynechá', () => {
+  const { segments, dropped } = buildNetworkFromOsm({
+    elements: [
+      node(1, 50, 14),
+      node(2, 50, 14.01),
+      node(3, 50, 14.02),
+      node(4, 50, 14.03),
+      node(5, 50.01, 14),
+      way(700, [1, 2], { highway: 'primary' }),
+      way(701, [2, 3], { highway: 'primary' }),
+      way(702, [3, 1], { highway: 'primary' }),
+      way(703, [3, 4], { highway: 'primary', oneway: 'yes' }),
+      way(704, [1, 5], { highway: 'residential' }),
+    ],
+  });
+  assert.equal(segments.size, 4);
+  assert.equal([...segments.values()].some((s) => s.from === 'n4' || s.to === 'n4'), false);
+  assert.equal(dropped.segments, 1);
+});
+
+test('jednosměrný okruh zůstane zachován', () => {
+  const { segments } = buildNetworkFromOsm({
+    elements: [
+      node(1, 50, 14),
+      node(2, 50, 14.01),
+      node(3, 50, 14.02),
+      way(710, [1, 2], { highway: 'primary', oneway: 'yes' }),
+      way(711, [2, 3], { highway: 'primary', oneway: 'yes' }),
+      way(712, [3, 1], { highway: 'primary', oneway: 'yes' }),
+    ],
+  });
+  assert.equal(segments.size, 3);
 });

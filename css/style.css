@@ -165,9 +165,17 @@ body {
   position: relative;
 }
 
-.help-button {
-  font-weight: 700;
-  padding: 6px 12px;
+.topbar .help-button {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: bold 12px/1 Georgia, serif;
+  cursor: help;
 }
 
 .help-popup {

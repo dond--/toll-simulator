@@ -226,7 +226,8 @@ body {
 }
 
 .help-popup td svg {
-  display: block;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .topbar button:disabled {

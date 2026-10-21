@@ -282,7 +282,7 @@ body {
   box-shadow: none;
 }
 
-.basemap-osm {
+.basemap {
   filter: saturate(0.35);
 }
 

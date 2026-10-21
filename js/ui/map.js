@@ -8,7 +8,7 @@ export function createMap(elementId) {
   const map = L.map(elementId);
   const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    className: 'basemap-osm',
+    className: 'basemap',
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   });
   const orthophoto = L.tileLayer('https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer/tile/{z}/{y}/{x}', {

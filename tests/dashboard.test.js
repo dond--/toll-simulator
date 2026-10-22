@@ -6,7 +6,7 @@ const state = { tolledSegments: 3, tolledKmByClass: { A: 1.5, B: 2, C: 0 }, bill
 
 test('řádky mýtného obsahují třídy, celkovou délku a zakázané úseky s km', () => {
   const rows = tollRows(state, false);
-  assert.deepEqual(rows.map(({ label }) => label), ['Úseky s mýtem', 'Třída A', 'Třída B', 'Třída C', 'Celkem', 'Zakázané úseky', 'Km v zakázaných úsecích']);
+  assert.deepEqual(rows.map(({ label }) => label), ['Úseky s mýtem', 'Třída A', 'Třída B', 'Třída C', 'Celkem s mýtem', 'Zakázané úseky', 'Km v zakázaných úsecích']);
   assert.equal(rows[4].value, '3,50 km');
   assert.equal(rows[5].value, '1');
   assert.equal(rows[6].value, '2,50 km');

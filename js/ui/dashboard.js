@@ -7,7 +7,7 @@ export function tollRows(ledgerState, showBill, showViolations = false) {
     { label: 'Třída A', value: `${formatDecimal(km.A)} km`, tollClass: 'A' },
     { label: 'Třída B', value: `${formatDecimal(km.B)} km`, tollClass: 'B' },
     { label: 'Třída C', value: `${formatDecimal(km.C)} km`, tollClass: 'C' },
-    { label: 'Celkem', value: `${formatDecimal(km.A + km.B + km.C)} km`, strong: true },
+    { label: 'Celkem s mýtem', value: `${formatDecimal(km.A + km.B + km.C)} km` },
     { label: 'Zakázané úseky', value: String(ledgerState.prohibitedEntries) },
     { label: 'Km v zakázaných úsecích', value: `${formatDecimal(ledgerState.prohibitedKm)} km` },
   ];

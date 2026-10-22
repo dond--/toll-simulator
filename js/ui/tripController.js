@@ -231,13 +231,9 @@ export function createTripController({ map, network, events, statusEl, recordDot
     return trip?.state.finished === true;
   }
 
-  function isOnRoute(segmentId) {
-    return route?.pieces.some((piece) => piece.segmentId === segmentId) ?? false;
-  }
-
   function zoomToRoute() {
     if (route) map.fitBounds(L.latLngBounds(route.coords).pad(0.03));
   }
 
-  return { start, stop, restart, zoomToRoute, isArrived, isOnRoute };
+  return { start, stop, restart, zoomToRoute, isArrived };
 }

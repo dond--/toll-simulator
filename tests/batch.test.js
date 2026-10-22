@@ -38,13 +38,11 @@ test('během jízdy jsou třídy vypnuté jen pro samé zakázané úseky', () =
   assert.equal(isChoiceDisabled('A', [blocked('a'), free('b')], () => false), false);
 });
 
-test('po dojetí do cíle lze zakázat jen úseky mimo trasu, povolit lze všechny zakázané', () => {
-  const onRoute = new Set(['a']);
-  const canEdit = (segment) => !onRoute.has(segment.id);
-  assert.equal(isChoiceDisabled(BLOCKED, [free('a')], canEdit), true);
-  assert.equal(isChoiceDisabled(BLOCKED, [free('b')], canEdit), false);
+test('po dojetí do cíle lze měnit i úseky na trase, povolit lze všechny zakázané', () => {
+  const canEdit = () => true;
+  assert.equal(isChoiceDisabled(BLOCKED, [free('a')], canEdit), false);
   const segments = [free('a'), free('b'), blocked('c')];
   const applied = applyChoice(segments, BLOCKED, canEdit);
-  assert.deepEqual(applied.map((s) => s.id), ['b', 'c']);
+  assert.deepEqual(applied.map((s) => s.id), ['a', 'b', 'c']);
   assert.deepEqual(applyChoice([blocked('c')], null, canEdit).map((s) => s.id), ['c']);
 });

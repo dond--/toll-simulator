@@ -292,6 +292,10 @@ body {
   font-size: 14px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+.toast[data-tone='warning'] {
+  background: #f57c00;
+  color: #212121;
+}
 #status {
   white-space: pre-line;
 }

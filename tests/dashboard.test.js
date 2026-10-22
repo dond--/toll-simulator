@@ -2,12 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tollRows } from '../js/ui/dashboard.js';
 
-const state = { tolledSegments: 3, tolledKmByClass: { A: 1.5, B: 2, C: 0 }, bill: 35 };
+const state = { tolledSegments: 3, tolledKmByClass: { A: 1.5, B: 2, C: 0 }, bill: 35, prohibitedEntries: 1, prohibitedKm: 2.5 };
 
-test('řádky mýtného obsahují třídy a celkovou délku', () => {
+test('řádky mýtného obsahují třídy, celkovou délku a zakázané úseky s km', () => {
   const rows = tollRows(state, false);
-  assert.deepEqual(rows.map(({ label }) => label), ['Úseky s mýtem', 'Třída A', 'Třída B', 'Třída C', 'Celkem']);
-  assert.equal(rows.at(-1).value, '3,50 km');
+  assert.deepEqual(rows.map(({ label }) => label), ['Úseky s mýtem', 'Třída A', 'Třída B', 'Třída C', 'Celkem', 'Zakázané úseky', 'Km v zakázaných úsecích']);
+  assert.equal(rows[4].value, '3,50 km');
+  assert.equal(rows[5].value, '1');
+  assert.equal(rows[6].value, '2,50 km');
 });
 
 test('v režimu předplatné přidá řádky s úseky a km bez předplatného', () => {

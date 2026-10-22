@@ -76,6 +76,31 @@ test('post-factum účtuje km × sazba a porušení nevyvolává', () => {
   assert.equal(violations.length, 0);
 });
 
+test('průjezd zakázaným úsekem vyvolá prohibition:violation v obou režimech a toll:violation ne', () => {
+  for (const mode of ['subscription', 'postFactum']) {
+    const net = network([{ id: 's1', tollClass: null, blocked: true, lengthKm: 2 }]);
+    const events = createEventBus();
+    const tollViolations = [];
+    const prohibitions = [];
+    events.on('toll:violation', () => tollViolations.push(1));
+    events.on('prohibition:violation', ({ segmentId }) => prohibitions.push(segmentId));
+    const { state } = createTollLedger({
+      network: net,
+      events,
+      settings: { ...subscription({ type: 'A' }), mode },
+      startedAt: 0,
+    });
+
+    events.emit('segment:enter', { segmentId: 's1', lengthKm: 2, simMs: 0 });
+
+    assert.deepEqual(prohibitions, ['s1']);
+    assert.equal(tollViolations.length, 0);
+    assert.equal(state.prohibitedEntries, 1);
+    assert.equal(state.prohibitedKm, 2);
+    assert.equal(state.tolledSegments, 0);
+  }
+});
+
 test('odhlášený ledger už nepočítá', () => {
   const net = network([{ id: 's1', tollClass: 'A', lengthKm: 1 }]);
   const events = createEventBus();

@@ -66,7 +66,10 @@ const tollSettings = createTollSettings();
 const tollPanel = createTollPanel(document.getElementById('toll-panel'), tollSettings);
 const notify = createToast(document.getElementById('toast'));
 events.on('toll:violation', ({ segmentId, tollClass }) => {
-  notify(`Porušení: úsek ${segmentId} (třída ${tollClass}) není kryt platným předplatným.`);
+  notify(`Porušení: úsek ${segmentId} (třída ${tollClass}) není kryt platným předplatným.`, 'warning');
+});
+events.on('prohibition:violation', ({ segmentId }) => {
+  notify(`Porušení: průjezd zakázaným úsekem ${segmentId}.`, 'error');
 });
 
 const restartButton = document.getElementById('restart');
@@ -87,11 +90,10 @@ function resetPlanning() {
 }
 document.getElementById('reset').addEventListener('click', resetPlanning);
 attachTollEditor(map, network, lines, {
-  canEdit: (segment) => planner.isIdle() || (trips.isArrived() && !trips.isOnRoute(segment.id)),
-  editNote: (targets) => {
-    if (planner.isIdle()) return null;
-    if (!trips.isArrived()) return 'Během jízdy nelze měnit stav povolený / zakázaný.';
-    return targets.some((segment) => trips.isOnRoute(segment.id)) ? 'Úseky na aktuální trase nelze zakázat.' : null;
+  canEdit: () => planner.isIdle() || trips.isArrived(),
+  editNote: () => {
+    if (planner.isIdle() || trips.isArrived()) return null;
+    return 'Během jízdy nelze měnit stav povolený / zakázaný.';
   },
   selection,
 });

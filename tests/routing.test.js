@@ -33,7 +33,7 @@ test('snap returns the segment under the point', () => {
   assert.ok(snap.distanceKm < 1e-6);
 });
 
-test('route runs between start and goal over free segments only', () => {
+test('route runs between start and goal', () => {
   const network = generateNetwork({ seed: 1 });
   const free = freeSegments(network);
   const start = midpoint(free[0]);
@@ -45,9 +45,6 @@ test('route runs between start and goal over free segments only', () => {
   assertNear(route.coords[0], start);
   assertNear(route.coords.at(-1), goal);
   assert.ok(route.lengthKm > 0);
-  for (const piece of route.pieces) {
-    assert.equal(network.segments.get(piece.segmentId).blocked, false);
-  }
 });
 
 test('consecutive route pieces meet at a shared node', () => {
@@ -74,7 +71,7 @@ test('start and goal on the same segment give a direct route', () => {
   assert.ok(Math.abs(result.route.lengthKm - L * 0.5) < 1e-6);
 });
 
-test('no route when blocked segments separate start and goal', () => {
+test('route passes through a blocked segment', () => {
   const a = { id: 'a', coords: [50, 14.0] };
   const b = { id: 'b', coords: [50, 14.01] };
   const c = { id: 'c', coords: [50, 14.02] };
@@ -89,9 +86,22 @@ test('no route when blocked segments separate start and goal', () => {
   );
   const network = { nodes, segments };
 
-  const start = midpoint(segments.get('s1'));
-  const goal = midpoint(segments.get('s3'));
-  const result = planRoute(network, start, goal);
+  const result = planRoute(network, midpoint(segments.get('s1')), midpoint(segments.get('s3')));
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.route.pieces.map((piece) => piece.segmentId), ['s1', 's2', 's3']);
+});
+
+test('no route when no segments connect start and goal', () => {
+  const a = { id: 'a', coords: [50, 14.0] };
+  const b = { id: 'b', coords: [50, 14.01] };
+  const c = { id: 'c', coords: [50, 14.02] };
+  const d = { id: 'd', coords: [50, 14.03] };
+  const nodes = new Map([a, b, c, d].map((n) => [n.id, { id: n.id, lat: n.coords[0], lng: n.coords[1] }]));
+  const segments = new Map([makeSegment('s1', a, b, false), makeSegment('s3', c, d, false)].map((s) => [s.id, s]));
+  const network = { nodes, segments };
+
+  const result = planRoute(network, midpoint(segments.get('s1')), midpoint(segments.get('s3')));
 
   assert.deepEqual(result, { ok: false, error: NO_ROUTE_ERROR });
 });

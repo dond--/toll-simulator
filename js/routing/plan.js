@@ -4,12 +4,11 @@ import { junctionNodes } from '../network/topology.js';
 const START = '__start__';
 const GOAL = '__goal__';
 const JUNCTION_PENALTY_H = 15 / 3600;
-export const NO_ROUTE_ERROR = 'Mezi body neexistuje trasa, která by nevedla přes zakázané úseky.';
+export const NO_ROUTE_ERROR = 'Mezi body neexistuje trasa.';
 
 export function snapToNetwork(network, point) {
   let best = null;
   for (const segment of network.segments.values()) {
-    if (segment.blocked) continue;
     const hit = projectOntoPolyline(segment.coords, point);
     if (!best || hit.distanceKm < best.distanceKm) {
       best = { segment, s: hit.s, point: hit.point, distanceKm: hit.distanceKm };
@@ -31,7 +30,6 @@ export function planRoute(network, startPoint, goalPoint) {
   };
 
   for (const segment of network.segments.values()) {
-    if (segment.blocked) continue;
     if (segment.id === startSnap.segment.id || segment.id === goalSnap.segment.id) continue;
     if (allowsForward(segment)) connect(segment.from, segment.to, segment.coords, segment.lengthKm, segment);
     if (allowsBackward(segment)) connect(segment.to, segment.from, [...segment.coords].reverse(), segment.lengthKm, segment);

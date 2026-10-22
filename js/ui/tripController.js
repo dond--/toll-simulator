@@ -22,6 +22,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
   let trip = null;
   let ledger = null;
   let tripSettings = null;
+  let trail = null;
   let car = null;
   let dot = null;
   let flashUntil = 0;
@@ -62,6 +63,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
     nextBlinkAt = 0;
     pauseUntil = 0;
     flashShown = false;
+    trail = L.polyline([], { color: COLORS.route, weight: 3, opacity: 0.9, interactive: false }).addTo(map);
     car = L.circleMarker(trip.carPosition(), {
       radius: 7,
       color: COLORS.route,
@@ -91,6 +93,8 @@ export function createTripController({ map, network, events, statusEl, recordDot
     ledger = null;
     car?.remove();
     car = null;
+    trail?.remove();
+    trail = null;
     dot?.remove();
     dot = null;
     trip = null;
@@ -115,6 +119,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
     }
     const { state } = trip;
     const position = trip.carPosition();
+    trail.setLatLngs(trip.travelledCoords());
     car.setLatLng(position);
     dot.setLatLng(position);
     const flashing = now < flashUntil;

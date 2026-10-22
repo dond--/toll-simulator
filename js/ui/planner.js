@@ -11,19 +11,18 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
   let goal = null;
   let startMarker = null;
   let goalMarker = null;
-  let routeLayer = null;
   let preview = null;
   let active = false;
 
   function clearLayers() {
     start = null;
     goal = null;
-    for (const layer of [startMarker, goalMarker, routeLayer]) layer?.remove();
+    for (const layer of [startMarker, goalMarker]) layer?.remove();
     startMarker = null;
     goalMarker = null;
-    routeLayer = null;
     onClear();
   }
+
 
   function reset() {
     clearLayers();
@@ -42,7 +41,6 @@ export function createPlanner(map, network, statusEl, { onRoute, onClear }) {
       return;
     }
     const { route } = result;
-    routeLayer = L.polyline(route.coords, { color: COLORS.route, weight: 3, opacity: 0.9, interactive: false }).addTo(map);
     statusEl.textContent = `Trasa: ${formatDecimal(route.lengthKm)} km, ${route.pieces.length} úseků`;
     onRoute(route);
   }

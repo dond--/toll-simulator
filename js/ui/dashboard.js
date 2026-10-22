@@ -34,7 +34,12 @@ export function createDashboard(root) {
         { label: 'Zaznamenané polohy', value: String(recordedPositions) },
         ...tollRows(ledger, showBill, showViolations),
       ];
-      list.innerHTML = rows.map(({ label, value }) => `<dt>${label}</dt><dd>${value}</dd>`).join('');
+      list.innerHTML = rows
+        .map(({ label, value, tollClass }) => {
+          const swatch = tollClass ? `<i class="swatch toll-${tollClass.toLowerCase()}"></i>` : '';
+          return `<dt>${swatch}${label}</dt><dd>${value}</dd>`;
+        })
+        .join('');
     },
     clear() {
       root.hidden = true;

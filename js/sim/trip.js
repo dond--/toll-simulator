@@ -1,4 +1,4 @@
-import { pointAt, sliceCoords } from '../network/geo.js';
+import { pointAt } from '../network/geo.js';
 import { createOnBoardUnit } from './obu.js';
 
 const MS_PER_HOUR = 3600000;
@@ -21,6 +21,8 @@ export function createTrip({ route, network, events, stops = new Set() }) {
       const speedKmh = network.segments.get(piece.segmentId).speedKmh;
       const leftKm = piece.lengthKm - offsetKm;
       const msToEnd = (leftKm / speedKmh) * MS_PER_HOUR;
+      const fromSim = state.simMs;
+      const fromOffset = offsetKm;
       if (msToEnd > remainingMs) {
         const movedKm = (remainingMs / MS_PER_HOUR) * speedKmh;
         offsetKm += movedKm;
@@ -47,7 +49,8 @@ export function createTrip({ route, network, events, stops = new Set() }) {
           }
         }
       }
-      state.recordedPositions = obu.advanceTo(state.simMs);
+      const positionAt = (simMs) => pointAt(piece.coords, fromOffset + ((simMs - fromSim) / MS_PER_HOUR) * speedKmh);
+      state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position: positionAt(simMs) }));
     }
     return stopped;
   }
@@ -57,17 +60,11 @@ export function createTrip({ route, network, events, stops = new Set() }) {
     return pointAt(pieces[index].coords, offsetKm);
   }
 
-  function travelledCoords() {
-    const completed = state.finished ? pieces.length : index;
-    const parts = pieces.slice(0, completed).map((piece) => piece.coords);
-    if (!state.finished && offsetKm > 0) parts.push(sliceCoords(pieces[index].coords, 0, offsetKm));
-    return parts.flatMap((coords, i) => (i === 0 ? coords : coords.slice(1)));
-  }
-
   function addWait(simDeltaMs) {
     state.simMs += simDeltaMs;
-    state.recordedPositions = obu.advanceTo(state.simMs);
+    const position = carPosition();
+    state.recordedPositions = obu.advanceTo(state.simMs, () => events.emit('obu:record', { position }));
   }
 
-  return { state, advance, addWait, carPosition, travelledCoords };
+  return { state, advance, addWait, carPosition };
 }

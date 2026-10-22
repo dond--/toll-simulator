@@ -12,17 +12,38 @@ const BLINK_MIN_MS = 250;
 const BLINK_MAX_MS = 850;
 const STOP_MIN_MS = 500;
 const STOP_MAX_MS = 1500;
+const DOT_REF_ZOOM = 16;
+const DOT_REF_RADIUS = 4;
+const DOT_MIN_RADIUS = 1;
+const DOT_MAX_RADIUS = 5;
+const DOT_OPACITY = 0.5;
+const DOT_OUTLINE_MIN_ZOOM = 13.6;
+const TRIP_PANES = [
+  ['trip-dots', 430],
+  ['trip-route', 440],
+  ['trip-car', 450],
+];
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
+function dotRadius(zoom) {
+  const radius = DOT_REF_RADIUS * 2 ** ((zoom - DOT_REF_ZOOM) / 2);
+  return Math.min(DOT_MAX_RADIUS, Math.max(DOT_MIN_RADIUS, radius));
+}
+
 export function createTripController({ map, network, events, statusEl, recordDot, restartButton, zoomButton, dashboard, tollPanel, settings, getTimeScale }) {
+  for (const [name, zIndex] of TRIP_PANES) map.createPane(name).style.zIndex = zIndex;
+  const dotRenderer = L.canvas({ pane: 'trip-dots', padding: 0.5 });
   let route = null;
   let trip = null;
   let ledger = null;
   let tripSettings = null;
-  let trail = null;
+  let routeLine = null;
+  let pathDots = null;
+  let recordedPoints = [];
+  let unsubscribeRecords = null;
   let car = null;
   let dot = null;
   let flashUntil = 0;
@@ -63,7 +84,14 @@ export function createTripController({ map, network, events, statusEl, recordDot
     nextBlinkAt = 0;
     pauseUntil = 0;
     flashShown = false;
-    trail = L.polyline([], { color: COLORS.route, weight: 3, opacity: 0.9, interactive: false }).addTo(map);
+    routeLine = L.polyline([], { color: COLORS.route, weight: 3, opacity: 0.9, interactive: false, pane: 'trip-route' }).addTo(map);
+    pathDots = L.layerGroup().addTo(map);
+    recordedPoints = [];
+    unsubscribeRecords = events.on('obu:record', ({ position }) => {
+      recordedPoints.push(position);
+      leavePathDot(position);
+    });
+    map.on('zoomend', applyDotRadius);
     car = L.circleMarker(trip.carPosition(), {
       radius: 7,
       color: COLORS.route,
@@ -71,6 +99,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
       fillColor: '#ffffff',
       fillOpacity: 1,
       interactive: false,
+      pane: 'trip-car',
     }).addTo(map);
     dot = L.circleMarker(trip.carPosition(), {
       radius: 3,
@@ -78,6 +107,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
       fillColor: COLORS.record,
       fillOpacity: 0,
       interactive: false,
+      pane: 'trip-car',
     }).addTo(map);
     lastTs = null;
     frame = requestAnimationFrame(tick);
@@ -93,8 +123,13 @@ export function createTripController({ map, network, events, statusEl, recordDot
     ledger = null;
     car?.remove();
     car = null;
-    trail?.remove();
-    trail = null;
+    unsubscribeRecords?.();
+    unsubscribeRecords = null;
+    map.off('zoomend', applyDotRadius);
+    routeLine?.remove();
+    routeLine = null;
+    pathDots?.remove();
+    pathDots = null;
     dot?.remove();
     dot = null;
     trip = null;
@@ -119,7 +154,6 @@ export function createTripController({ map, network, events, statusEl, recordDot
     }
     const { state } = trip;
     const position = trip.carPosition();
-    trail.setLatLngs(trip.travelledCoords());
     car.setLatLng(position);
     dot.setLatLng(position);
     const flashing = now < flashUntil;
@@ -131,6 +165,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
 
     if (state.finished) {
       frame = null;
+      routeLine.setLatLngs([...recordedPoints, trip.carPosition()]);
       recordDot.hidden = true;
       dashboard.clear();
       tollPanel.setLocked(false);
@@ -148,6 +183,30 @@ export function createTripController({ map, network, events, statusEl, recordDot
       showViolations: tripSettings.mode === 'subscription',
     });
     frame = requestAnimationFrame(tick);
+  }
+
+  function leavePathDot(position) {
+    const zoom = map.getZoom();
+    L.circleMarker(position, {
+      renderer: dotRenderer,
+      radius: dotRadius(zoom),
+      color: '#ffffff',
+      weight: 1,
+      stroke: zoom >= DOT_OUTLINE_MIN_ZOOM,
+      fillColor: COLORS.trail,
+      fillOpacity: DOT_OPACITY,
+      interactive: false,
+    }).addTo(pathDots);
+  }
+
+  function applyDotRadius() {
+    const zoom = map.getZoom();
+    const radius = dotRadius(zoom);
+    const stroke = zoom >= DOT_OUTLINE_MIN_ZOOM;
+    pathDots?.eachLayer((layer) => {
+      layer.setRadius(radius);
+      layer.setStyle({ stroke });
+    });
   }
 
   function showSummary(state) {

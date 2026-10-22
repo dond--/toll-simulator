@@ -40,29 +40,6 @@ test('krokování po malých úsecích dává stejný výsledek jako jeden krok'
   assert.ok(Math.abs(bigStep.state.simMs - smallSteps.state.simMs) < 1e-6);
 });
 
-test('projetá část trasy končí v aktuální pozici auta', () => {
-  const { network, route } = buildRoute();
-  const trip = createTrip({ route, network, events: createEventBus() });
-
-  assert.deepEqual(trip.travelledCoords(), []);
-
-  trip.advance(60000);
-  const travelled = trip.travelledCoords();
-
-  assert.deepEqual(travelled[0], route.coords[0]);
-  assert.deepEqual(travelled.at(-1), trip.carPosition());
-  assert.ok(travelled.length < route.coords.length);
-});
-
-test('po dojetí je projetá část celá trasa', () => {
-  const { network, route } = buildRoute();
-  const trip = createTrip({ route, network, events: createEventBus() });
-
-  trip.advance(1e12);
-
-  assert.deepEqual(trip.travelledCoords(), route.coords);
-});
-
 test('vjezd do každého úseku trasy je ohlášen událostí', () => {
   const { network, route } = buildRoute();
   const events = createEventBus();
@@ -73,4 +50,18 @@ test('vjezd do každého úseku trasy je ohlášen událostí', () => {
   trip.advance(1e12);
 
   assert.deepEqual(entered, route.pieces.map((p) => p.segmentId));
+});
+
+test('každá událost OBU je ohlášena polohou', () => {
+  const { network, route } = buildRoute();
+  const events = createEventBus();
+  const positions = [];
+  events.on('obu:record', ({ position }) => positions.push(position));
+  const trip = createTrip({ route, network, events });
+
+  trip.advance(600000);
+
+  assert.ok(positions.length > 0);
+  assert.equal(positions.length, trip.state.recordedPositions);
+  for (const [lat, lng] of positions) assert.ok(Number.isFinite(lat) && Number.isFinite(lng));
 });

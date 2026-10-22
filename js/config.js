@@ -28,4 +28,5 @@ export const COLORS = {
   goal: '#8e24aa',
   selection: '#ffeb3b',
   record: '#00c853',
+  trail: '#00ff00',
 };

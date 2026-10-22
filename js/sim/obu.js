@@ -10,9 +10,10 @@ export function createOnBoardUnit(random = Math.random) {
   let nextAt = randomInterval(random);
 
   return {
-    advanceTo(simMs) {
+    advanceTo(simMs, onRecord = () => {}) {
       while (nextAt <= simMs) {
         count++;
+        onRecord(nextAt);
         nextAt += randomInterval(random);
       }
       return count;

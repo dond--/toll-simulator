@@ -29,3 +29,11 @@ test('průměrný interval je zhruba 2 s', () => {
   const count = unit.advanceTo(2000000);
   assert.ok(count >= 950 && count <= 1050, `počet ${count}`);
 });
+
+test('každá událost je předána zpětnému volání ve svém čase', () => {
+  const unit = createOnBoardUnit(() => 0);
+  const times = [];
+  const count = unit.advanceTo(3500, (t) => times.push(t));
+  assert.equal(count, 3);
+  assert.deepEqual(times, [1000, 2000, 3000]);
+});

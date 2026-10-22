@@ -5,11 +5,12 @@ export function createSummaryTip(anchor) {
   document.body.append(tip);
 
   let rows = null;
+  let subtitle = null;
   let hovered = false;
 
   function render() {
     const heading = document.createElement('h3');
-    heading.textContent = 'Souhrn ujeté trasy';
+    heading.textContent = subtitle ? `Souhrn ujeté trasy (${subtitle})` : 'Souhrn ujeté trasy';
     const lines = rows.map(({ label, value, tollClass, strong }) => {
       const line = document.createElement('div');
       line.className = strong ? 'summary-tip-row strong' : 'summary-tip-row';
@@ -48,8 +49,9 @@ export function createSummaryTip(anchor) {
   });
 
   return {
-    set(newRows) {
+    set(newRows, newSubtitle = null) {
       rows = newRows;
+      subtitle = newSubtitle;
       if (hovered) show();
     },
     clear() {

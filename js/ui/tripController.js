@@ -217,6 +217,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
     icon.className = 'info-icon';
     icon.textContent = 'i';
     statusEl.replaceChildren(icon);
+    const tollLabel = postFactum ? 'platba za km' : 'předplatné';
     summaryTip.set([
       { label: 'Ujetá vzdálenost', value: `${formatDecimal(state.distanceKm)} km` },
       { label: 'Celkový čas', value: formatDuration(state.simMs) },
@@ -224,7 +225,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
       { label: 'Délka zpoplatněných úseků', value: `${formatDecimal(tolledKm)} km` },
       { label: 'Zaznamenané polohy', value: String(state.recordedPositions) },
       ...tollRows(ledger.state, postFactum, !postFactum),
-    ]);
+    ], tollLabel);
   }
 
   function isArrived() {

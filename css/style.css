@@ -283,6 +283,20 @@ body {
   margin: 0;
 }
 
+.panel h3 {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.panel label.rate {
+  gap: 2em;
+}
+
+.panel label.inline input[type='number'] {
+  width: 6em;
+  text-align: right;
+}
+
 .panel input,
 .panel select {
   font: inherit;
@@ -309,6 +323,10 @@ body {
 }
 .toast[data-tone='warning'] {
   background: #f57c00;
+  color: #212121;
+}
+.toast[data-tone='caution'] {
+  background: #fdd835;
   color: #212121;
 }
 #status {

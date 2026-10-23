@@ -1,6 +1,7 @@
 import { COLORS } from '../config.js';
 import { formatDecimal, formatDuration } from '../format.js';
 import { createTollLedger } from '../tolls/ledger.js';
+import { snapshotTollSettings } from '../tolls/policy.js';
 import { createTrip } from '../sim/trip.js';
 import { planJunctionStops } from '../sim/stops.js';
 import { tollRows } from './dashboard.js';
@@ -77,8 +78,8 @@ export function createTripController({ map, network, events, statusEl, recordDot
     summaryTip.clear();
     recordDot.hidden = false;
     statusEl.textContent = '';
-    tripSettings = { ...settings };
-    ledger = createTollLedger({ network, events, settings: tripSettings, startedAt: Date.now() });
+    tripSettings = snapshotTollSettings(settings);
+    ledger = createTollLedger({ network, events, settings: tripSettings, rates: tripSettings.rates, startedAt: Date.now() });
     trip = createTrip({ route, network, events, stops: planJunctionStops(route, network, Math.random) });
     flashUntil = 0;
     nextBlinkAt = 0;

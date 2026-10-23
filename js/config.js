@@ -2,6 +2,10 @@ export const TOLL_CLASSES = ['A', 'B', 'C'];
 
 export const TOLL_RATES = { A: 1, B: 10, C: 100 };
 
+export const RATE_MIN = 1;
+
+export const RATE_MAX = 1000;
+
 export const ROAD_STYLE = {
   motorway: { color: '#000000', weight: 4 },
   motorway_link: { color: '#000000', weight: 4 },

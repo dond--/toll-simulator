@@ -1,21 +1,23 @@
 import { formatDecimal } from '../format.js';
 import { updateSegmentLine } from './map.js';
 import { BLOCKED, applyChoice, isChoiceDisabled } from '../tolls/batch.js';
+import { tollClassLabel } from '../tolls/rates.js';
+import { TOLL_CLASSES } from '../config.js';
 
-const CHOICES = [
-  { key: BLOCKED, label: 'Zakázaný' },
-  { key: null, label: 'Bez zpoplatnění' },
-  { key: 'A', label: 'Třída A (1 Kč/km)' },
-  { key: 'B', label: 'Třída B (10 Kč/km)' },
-  { key: 'C', label: 'Třída C (100 Kč/km)' },
-];
+function choicesFor(rates) {
+  return [
+    { key: BLOCKED, label: 'Zakázaný' },
+    { key: null, label: 'Bez zpoplatnění' },
+    ...TOLL_CLASSES.map((tollClass) => ({ key: tollClass, label: tollClassLabel(tollClass, rates[tollClass]) })),
+  ];
+}
 
-export function attachTollEditor(map, network, lines, { canEdit, editNote, selection }) {
+export function attachTollEditor(map, network, lines, { canEdit, editNote, selection, getRates }) {
   for (const [id, line] of lines) {
     line.on('contextmenu', (event) => {
       L.DomEvent.preventDefault(event.originalEvent);
       if (selection.selectedIds().length === 0) {
-        openEditor(map, event.latlng, [network.segments.get(id)], lines, { canEdit, editNote });
+        openEditor(map, event.latlng, [network.segments.get(id)], lines, { canEdit, editNote, getRates });
       }
     });
   }
@@ -24,11 +26,11 @@ export function attachTollEditor(map, network, lines, { canEdit, editNote, selec
     const ids = selection.selectedIds();
     if (ids.length === 0) return;
     L.DomEvent.preventDefault(event.originalEvent);
-    openEditor(map, event.latlng, ids.map((id) => network.segments.get(id)), lines, { canEdit, editNote });
+    openEditor(map, event.latlng, ids.map((id) => network.segments.get(id)), lines, { canEdit, editNote, getRates });
   });
 }
 
-function openEditor(map, latlng, targets, lines, { canEdit, editNote }) {
+function openEditor(map, latlng, targets, lines, { canEdit, editNote, getRates }) {
   const box = document.createElement('div');
   box.className = 'toll-editor';
   box.append(titleFor(targets));
@@ -37,7 +39,7 @@ function openEditor(map, latlng, targets, lines, { canEdit, editNote }) {
   if (note) box.append(noteFor(note));
 
   const options = document.createElement('div');
-  for (const { key, label } of CHOICES) {
+  for (const { key, label } of choicesFor(getRates())) {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;

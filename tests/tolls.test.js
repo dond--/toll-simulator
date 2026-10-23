@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createEventBus } from '../js/core/events.js';
-import { createTollSettings, subscriptionCovers } from '../js/tolls/policy.js';
+import { createTollSettings, snapshotTollSettings, subscriptionCovers } from '../js/tolls/policy.js';
 import { createTollLedger } from '../js/tolls/ledger.js';
 
 const HOUR = 3600000;
+const RATES = { A: 1, B: 10, C: 100 };
 const subscription = (overrides = {}) => ({ mode: 'subscription', type: 'B', validFrom: 0, validUntil: 10 * HOUR, ...overrides });
 const network = (segments) => ({ segments: new Map(segments.map((s) => [s.id, s])) });
 
@@ -40,7 +41,7 @@ test('ledger počítá zpoplatněné úseky a km po třídách a hlásí poruše
   const events = createEventBus();
   const violations = [];
   events.on('toll:violation', ({ segmentId }) => violations.push(segmentId));
-  const { state } = createTollLedger({ network: net, events, settings: subscription(), startedAt: 0 });
+  const { state } = createTollLedger({ network: net, events, settings: subscription(), rates: RATES, startedAt: 0 });
 
   events.emit('segment:enter', { segmentId: 's1', lengthKm: 2, simMs: 0 });
   events.emit('segment:enter', { segmentId: 's2', lengthKm: 3, simMs: HOUR });
@@ -54,7 +55,7 @@ test('ledger počítá zpoplatněné úseky a km po třídách a hlásí poruše
   assert.deepEqual(state.tolledKmByClass, { A: 3, B: 4, C: 2 });
 });
 
-test('post-factum účtuje km × sazba a porušení nevyvolává', () => {
+test('post-factum účtuje km × sazba z předaných cen a porušení nevyvolává', () => {
   const net = network([
     { id: 's1', tollClass: 'C', lengthKm: 2 },
     { id: 's2', tollClass: 'A', lengthKm: 3 },
@@ -66,14 +67,28 @@ test('post-factum účtuje km × sazba a porušení nevyvolává', () => {
     network: net,
     events,
     settings: { mode: 'postFactum', type: 'A', validFrom: 0, validUntil: 0 },
+    rates: { A: 5, B: 20, C: 300 },
     startedAt: 0,
   });
 
   events.emit('segment:enter', { segmentId: 's1', lengthKm: 2, simMs: 0 });
   events.emit('segment:enter', { segmentId: 's2', lengthKm: 3, simMs: 0 });
 
-  assert.equal(state.bill, 2 * 100 + 3 * 1);
+  assert.equal(state.bill, 2 * 300 + 3 * 5);
   assert.equal(violations.length, 0);
+});
+
+test('snapshot cen je nezávislý na pozdější změně nastavení', () => {
+  const net = network([{ id: 's1', tollClass: 'C', lengthKm: 2 }]);
+  const events = createEventBus();
+  const settings = { ...createTollSettings(0), mode: 'postFactum', rates: { ...RATES } };
+  const trip = snapshotTollSettings(settings);
+  settings.rates = { A: 2, B: 20, C: 200 };
+  const { state } = createTollLedger({ network: net, events, settings: trip, rates: trip.rates, startedAt: 0 });
+
+  events.emit('segment:enter', { segmentId: 's1', lengthKm: 2, simMs: 0 });
+
+  assert.equal(state.bill, 2 * 100);
 });
 
 test('průjezd zakázaným úsekem vyvolá prohibition:violation v obou režimech a toll:violation ne', () => {
@@ -88,6 +103,7 @@ test('průjezd zakázaným úsekem vyvolá prohibition:violation v obou režimec
       network: net,
       events,
       settings: { ...subscription({ type: 'A' }), mode },
+      rates: RATES,
       startedAt: 0,
     });
 
@@ -104,7 +120,7 @@ test('průjezd zakázaným úsekem vyvolá prohibition:violation v obou režimec
 test('odhlášený ledger už nepočítá', () => {
   const net = network([{ id: 's1', tollClass: 'A', lengthKm: 1 }]);
   const events = createEventBus();
-  const { state, dispose } = createTollLedger({ network: net, events, settings: subscription(), startedAt: 0 });
+  const { state, dispose } = createTollLedger({ network: net, events, settings: subscription(), rates: RATES, startedAt: 0 });
   dispose();
   events.emit('segment:enter', { segmentId: 's1', lengthKm: 1, simMs: 0 });
   assert.equal(state.tolledSegments, 0);

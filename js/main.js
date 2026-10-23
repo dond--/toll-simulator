@@ -8,9 +8,11 @@ import { createTripController } from './ui/tripController.js';
 import { createPlanner } from './ui/planner.js';
 import { createSelection, segmentIdsByRoadClass } from './ui/selection.js';
 import { createTollSettings } from './tolls/policy.js';
+import { tollClassLabel } from './tolls/rates.js';
 import { createTollPanel } from './ui/tollPanel.js';
 import { createToast } from './ui/toast.js';
 import { createDashboard } from './ui/dashboard.js';
+import { TOLL_RATES } from './config.js';
 
 const statusEl = document.getElementById('status');
 const recordDot = document.getElementById('record-dot');
@@ -62,9 +64,10 @@ window.addEventListener('keydown', (event) => {
 });
 
 const events = createEventBus();
-const tollSettings = createTollSettings();
-const tollPanel = createTollPanel(document.getElementById('toll-panel'), tollSettings);
 const notify = createToast(document.getElementById('toast'));
+const tollSettings = { ...createTollSettings(), rates: { ...TOLL_RATES } };
+const tollPanel = createTollPanel(document.getElementById('toll-panel'), tollSettings, { onRatesChange: renderRateLabels, notify });
+renderRateLabels();
 events.on('toll:violation', ({ segmentId, tollClass }) => {
   notify(`Porušení: úsek ${segmentId} (třída ${tollClass}) není kryt platným předplatným.`, 'warning');
 });
@@ -96,7 +99,15 @@ attachTollEditor(map, network, lines, {
     return 'Během jízdy nelze měnit stav povolený / zakázaný.';
   },
   selection,
+  getRates: () => tollSettings.rates,
 });
+
+function renderRateLabels() {
+  for (const el of document.querySelectorAll('[data-toll-class]')) {
+    const tollClass = el.dataset.tollClass;
+    el.textContent = tollClassLabel(tollClass, tollSettings.rates[tollClass]);
+  }
+}
 
 async function loadInitialNetwork(params) {
   if (params.has('seed')) {

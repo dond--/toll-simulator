@@ -30,6 +30,7 @@ const map = createMap('map');
 const lines = renderNetwork(map, network);
 const selection = createSelection(map, lines, network.segments);
 const TEXT_ENTRY_SELECTOR = 'select, textarea, [contenteditable], input:not([type=radio]):not([type=checkbox]):not([type=range])';
+const NUMBER_ENTRY_KEY = /^(\d|[-+.]|Shift|Backspace|Delete|Tab|Enter|Arrow(Up|Down|Left|Right)|Home|End)$/;
 const ROAD_CLASS_BY_KEY = {
   d: 'motorway',
   m: 'motorway_link',
@@ -40,7 +41,10 @@ const ROAD_CLASS_BY_KEY = {
 };
 window.addEventListener('keydown', (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.target instanceof HTMLElement && event.target.closest(TEXT_ENTRY_SELECTOR)) return;
+  if (event.target instanceof HTMLElement && event.target.closest(TEXT_ENTRY_SELECTOR)) {
+    if (!event.target.matches('input[type=number]') || NUMBER_ENTRY_KEY.test(event.key)) return;
+    event.target.blur();
+  }
   const key = event.key.toLowerCase();
   if (key === 'a') {
     selection.select(network.segments.keys());

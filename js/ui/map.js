@@ -16,7 +16,8 @@ export function createMap(elementId) {
     attribution: '© <a href="https://www.cuzk.cz">ČÚZK</a>',
   });
   osm.addTo(map);
-  L.control.layers({ Mapa: osm, Ortofoto: orthophoto }, null, { position: 'bottomright' }).addTo(map);
+  map.attributionControl.setPosition('bottomleft');
+  L.control.layers({ Mapa: osm, Ortofoto: orthophoto }, null, { position: 'topleft' }).addTo(map);
   return map;
 }
 

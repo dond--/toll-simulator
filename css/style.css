@@ -77,8 +77,8 @@ body {
 
 .legend {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  bottom: 28px;
+  left: 10px;
   z-index: 1000;
   padding: 8px 12px;
   border-radius: 6px;
@@ -249,7 +249,7 @@ body {
 .panel {
   position: absolute;
   bottom: 10px;
-  left: 10px;
+  right: 10px;
   z-index: 1000;
   display: flex;
   flex-direction: column;

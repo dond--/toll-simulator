@@ -87,6 +87,23 @@ export function projectOntoPolyline(coords, point) {
   return best;
 }
 
+export function chaikinPath(points, iterations) {
+  if (points.length < 3) return points;
+  let current = points;
+  for (let n = 0; n < iterations; n++) {
+    const next = [current[0]];
+    for (let i = 0; i < current.length - 1; i++) {
+      const a = current[i];
+      const b = current[i + 1];
+      next.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+      next.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+    }
+    next.push(current.at(-1));
+    current = next;
+  }
+  return current;
+}
+
 function lerp(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateNetwork } from '../js/network/generate.js';
-import { offsetPerpendicular, pointAt, projectOntoPolyline } from '../js/network/geo.js';
+import { chaikinPath, offsetPerpendicular, pointAt, projectOntoPolyline } from '../js/network/geo.js';
 import { planRoute } from '../js/routing/plan.js';
 import { createEventBus } from '../js/core/events.js';
 import { createTrip } from '../js/sim/trip.js';
@@ -113,6 +113,21 @@ test('poloha OBU se od svého úseku liší nejvýše o 5 m', () => {
     const piece = route.pieces.find((p) => p.segmentId === segmentId);
     assert.ok(projectOntoPolyline(piece.coords, position).distanceKm <= 0.005 + 1e-9);
   }
+});
+
+test('Chaikinovo vyhlazení zachová krajní body a nevrací NaN ani u shodných bodů', () => {
+  const points = [[50.0, 14.0], [50.0, 14.0], [50.001, 14.002], [50.0015, 14.0035], [50.003, 14.003]];
+  const curve = chaikinPath(points, 3);
+
+  assert.ok(curve.every(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng)));
+  assert.deepEqual(curve[0], points[0]);
+  assert.deepEqual(curve.at(-1), points.at(-1));
+  assert.ok(curve.length > points.length);
+});
+
+test('trasa se dvěma body zůstane přímkou', () => {
+  const points = [[50.0, 14.0], [50.001, 14.002]];
+  assert.deepEqual(chaikinPath(points, 3), points);
 });
 
 test('posun OBU je kolmý na úsek', () => {

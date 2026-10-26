@@ -1,5 +1,6 @@
 import { COLORS } from '../config.js';
 import { formatDecimal, formatDuration } from '../format.js';
+import { chaikinPath } from '../network/geo.js';
 import { createTollLedger } from '../tolls/ledger.js';
 import { snapshotTollSettings } from '../tolls/policy.js';
 import { createTrip } from '../sim/trip.js';
@@ -20,6 +21,7 @@ const DOT_MAX_RADIUS = 5;
 const DOT_OPACITY = 0.5;
 const DOT_OUTLINE_MIN_ZOOM = 13.6;
 const RECORD_HIT_PX = 6;
+const CURVE_ITERATIONS = 3;
 const TRIP_PANES = [
   ['trip-dots', 430],
   ['trip-route', 440],
@@ -46,6 +48,8 @@ export function createTripController({ map, network, events, statusEl, recordDot
   let pathDots = null;
   let records = [];
   let tripStartedAt = 0;
+  let stopGroup = null;
+  let stopCount = 0;
   let unsubscribeRecords = null;
   let car = null;
   let dot = null;
@@ -92,8 +96,10 @@ export function createTripController({ map, network, events, statusEl, recordDot
     pathDots = L.layerGroup().addTo(map);
     records = [];
     tripStartedAt = Date.now();
+    stopGroup = null;
+    stopCount = 0;
     unsubscribeRecords = events.on('obu:record', ({ position, simMs, segmentId }) => {
-      records.push({ position, time: tripStartedAt + simMs, segmentId });
+      records.push({ position, time: tripStartedAt + simMs, segmentId, stop: stopGroup });
       leavePathDot(position);
     });
     map.on('zoomend', applyDotRadius);
@@ -153,8 +159,12 @@ export function createTripController({ map, network, events, statusEl, recordDot
       const simDeltaMs = Math.min(now - lastTs, MAX_FRAME_MS) * getTimeScale();
       if (now < pauseUntil) {
         trip.addWait(simDeltaMs);
-      } else if (trip.advance(simDeltaMs)) {
-        pauseUntil = now + randomBetween(STOP_MIN_MS, STOP_MAX_MS);
+      } else {
+        stopGroup = null;
+        if (trip.advance(simDeltaMs)) {
+          pauseUntil = now + randomBetween(STOP_MIN_MS, STOP_MAX_MS);
+          stopGroup = ++stopCount;
+        }
       }
     }
     lastTs = now;
@@ -175,7 +185,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
 
     if (state.finished) {
       frame = null;
-      routeLine.setLatLngs([...records.map((record) => record.position), trip.carPosition()]);
+      routeLine.setLatLngs(chaikinPath([...routeVertices(), trip.carPosition()], CURVE_ITERATIONS));
       recordDot.hidden = true;
       dashboard.clear();
       tollPanel.setLocked(false);
@@ -193,6 +203,21 @@ export function createTripController({ map, network, events, statusEl, recordDot
       showViolations: tripSettings.mode === 'subscription',
     });
     frame = requestAnimationFrame(tick);
+  }
+
+  function routeVertices() {
+    const groups = [];
+    for (const { position, stop } of records) {
+      const last = groups.at(-1);
+      if (stop !== null && last?.stop === stop) last.points.push(position);
+      else groups.push({ stop, points: [position] });
+    }
+    return groups.map(({ stop, points }) => (stop === null ? points[0] : average(points)));
+  }
+
+  function average(points) {
+    const sum = points.reduce((acc, [lat, lng]) => [acc[0] + lat, acc[1] + lng], [0, 0]);
+    return [sum[0] / points.length, sum[1] / points.length];
   }
 
   function leavePathDot(position) {

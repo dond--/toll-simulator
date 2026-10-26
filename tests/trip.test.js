@@ -65,3 +65,35 @@ test('každá událost OBU je ohlášena polohou', () => {
   assert.equal(positions.length, trip.state.recordedPositions);
   for (const [lat, lng] of positions) assert.ok(Number.isFinite(lat) && Number.isFinite(lng));
 });
+
+test('události OBU nesou čas v simulaci, i během čekání', () => {
+  const { network, route } = buildRoute();
+  const events = createEventBus();
+  const times = [];
+  events.on('obu:record', ({ simMs }) => times.push(simMs));
+  const trip = createTrip({ route, network, events });
+
+  trip.advance(60000);
+  const beforeWait = trip.state.simMs;
+  trip.addWait(60000);
+
+  assert.equal(times.length, trip.state.recordedPositions);
+  assert.ok(times.every((t, i) => i === 0 || t >= times[i - 1]));
+  assert.ok(times.some((t) => t > beforeWait));
+  assert.ok(times.every((t) => t <= trip.state.simMs));
+});
+
+test('každá událost OBU nese úsek, na kterém se nachází', () => {
+  const { network, route } = buildRoute();
+  const events = createEventBus();
+  const segmentIds = new Set(route.pieces.map((p) => p.segmentId));
+  const seen = [];
+  events.on('obu:record', ({ segmentId }) => seen.push(segmentId));
+  const trip = createTrip({ route, network, events });
+
+  trip.advance(1e12);
+  trip.addWait(60000);
+
+  assert.equal(seen.length, trip.state.recordedPositions);
+  assert.ok(seen.every((id) => segmentIds.has(id)));
+});

@@ -50,7 +50,7 @@ export function createTrip({ route, network, events, stops = new Set() }) {
         }
       }
       const positionAt = (simMs) => pointAt(piece.coords, fromOffset + ((simMs - fromSim) / MS_PER_HOUR) * speedKmh);
-      state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position: positionAt(simMs) }));
+      state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position: positionAt(simMs), simMs, segmentId: piece.segmentId }));
     }
     return stopped;
   }
@@ -63,7 +63,8 @@ export function createTrip({ route, network, events, stops = new Set() }) {
   function addWait(simDeltaMs) {
     state.simMs += simDeltaMs;
     const position = carPosition();
-    state.recordedPositions = obu.advanceTo(state.simMs, () => events.emit('obu:record', { position }));
+    const segmentId = (state.finished ? pieces.at(-1) : pieces[index]).segmentId;
+    state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position, simMs, segmentId }));
   }
 
   return { state, advance, addWait, carPosition };

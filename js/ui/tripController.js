@@ -19,6 +19,7 @@ const DOT_MIN_RADIUS = 1;
 const DOT_MAX_RADIUS = 5;
 const DOT_OPACITY = 0.5;
 const DOT_OUTLINE_MIN_ZOOM = 13.6;
+const RECORD_HIT_PX = 6;
 const TRIP_PANES = [
   ['trip-dots', 430],
   ['trip-route', 440],
@@ -43,7 +44,8 @@ export function createTripController({ map, network, events, statusEl, recordDot
   let tripSettings = null;
   let routeLine = null;
   let pathDots = null;
-  let recordedPoints = [];
+  let records = [];
+  let tripStartedAt = 0;
   let unsubscribeRecords = null;
   let car = null;
   let dot = null;
@@ -54,6 +56,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
   let frame = null;
   let lastTs = null;
   const summaryTip = createSummaryTip(statusEl);
+  const recordTip = L.tooltip({ direction: 'top', offset: [0, -8] });
 
   function start(newRoute) {
     route = newRoute;
@@ -87,12 +90,15 @@ export function createTripController({ map, network, events, statusEl, recordDot
     flashShown = false;
     routeLine = L.polyline([], { color: COLORS.route, weight: 3, opacity: 0.9, interactive: false, pane: 'trip-route' }).addTo(map);
     pathDots = L.layerGroup().addTo(map);
-    recordedPoints = [];
-    unsubscribeRecords = events.on('obu:record', ({ position }) => {
-      recordedPoints.push(position);
+    records = [];
+    tripStartedAt = Date.now();
+    unsubscribeRecords = events.on('obu:record', ({ position, simMs, segmentId }) => {
+      records.push({ position, time: tripStartedAt + simMs, segmentId });
       leavePathDot(position);
     });
     map.on('zoomend', applyDotRadius);
+    map.on('mousemove', showRecordTip);
+    map.on('mouseout', hideRecordTip);
     car = L.circleMarker(trip.carPosition(), {
       radius: 7,
       color: COLORS.route,
@@ -127,6 +133,9 @@ export function createTripController({ map, network, events, statusEl, recordDot
     unsubscribeRecords?.();
     unsubscribeRecords = null;
     map.off('zoomend', applyDotRadius);
+    map.off('mousemove', showRecordTip);
+    map.off('mouseout', hideRecordTip);
+    hideRecordTip();
     routeLine?.remove();
     routeLine = null;
     pathDots?.remove();
@@ -166,7 +175,7 @@ export function createTripController({ map, network, events, statusEl, recordDot
 
     if (state.finished) {
       frame = null;
-      routeLine.setLatLngs([...recordedPoints, trip.carPosition()]);
+      routeLine.setLatLngs([...records.map((record) => record.position), trip.carPosition()]);
       recordDot.hidden = true;
       dashboard.clear();
       tollPanel.setLocked(false);
@@ -208,6 +217,32 @@ export function createTripController({ map, network, events, statusEl, recordDot
       layer.setRadius(radius);
       layer.setStyle({ stroke });
     });
+  }
+
+  function showRecordTip(event) {
+    let nearest = null;
+    let nearestDistance = RECORD_HIT_PX;
+    for (const record of records) {
+      const distance = map.latLngToContainerPoint(record.position).distanceTo(event.containerPoint);
+      if (distance <= nearestDistance) {
+        nearest = record;
+        nearestDistance = distance;
+      }
+    }
+    if (!nearest) {
+      hideRecordTip();
+      return;
+    }
+    const [lat, lng] = nearest.position;
+    const time = new Date(nearest.time).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    recordTip
+      .setLatLng(nearest.position)
+      .setContent(`Čas: ${time}<br>Poloha: ${formatDecimal(lat, 5)}, ${formatDecimal(lng, 5)}<br>Úsek: ${nearest.segmentId}`);
+    if (!map.hasLayer(recordTip)) recordTip.addTo(map);
+  }
+
+  function hideRecordTip() {
+    if (map.hasLayer(recordTip)) recordTip.remove();
   }
 
   function showSummary(state) {

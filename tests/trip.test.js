@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateNetwork } from '../js/network/generate.js';
-import { pointAt } from '../js/network/geo.js';
+import { offsetPerpendicular, pointAt, projectOntoPolyline } from '../js/network/geo.js';
 import { planRoute } from '../js/routing/plan.js';
 import { createEventBus } from '../js/core/events.js';
 import { createTrip } from '../js/sim/trip.js';
@@ -96,4 +96,33 @@ test('každá událost OBU nese úsek, na kterém se nachází', () => {
 
   assert.equal(seen.length, trip.state.recordedPositions);
   assert.ok(seen.every((id) => segmentIds.has(id)));
+});
+
+test('poloha OBU se od svého úseku liší nejvýše o 5 m', () => {
+  const { network, route } = buildRoute();
+  const events = createEventBus();
+  const records = [];
+  events.on('obu:record', ({ position, segmentId }) => records.push({ position, segmentId }));
+  const trip = createTrip({ route, network, events });
+
+  trip.advance(1e12);
+  trip.addWait(60000);
+
+  assert.ok(records.length > 0);
+  for (const { position, segmentId } of records) {
+    const piece = route.pieces.find((p) => p.segmentId === segmentId);
+    assert.ok(projectOntoPolyline(piece.coords, position).distanceKm <= 0.005 + 1e-9);
+  }
+});
+
+test('posun OBU je kolmý na úsek', () => {
+  const coords = [[50.0, 14.0], [50.001, 14.002]];
+  const base = pointAt(coords, 0.05);
+  const moved = offsetPerpendicular(coords, 0.05, 0.004);
+  const kmPerDegLng = 111.195 * Math.cos((base[0] * Math.PI) / 180);
+  const offset = [(moved[1] - base[1]) * kmPerDegLng, (moved[0] - base[0]) * 111.195];
+  const tangent = [(coords[1][1] - coords[0][1]) * kmPerDegLng, (coords[1][0] - coords[0][0]) * 111.195];
+  const dot = offset[0] * tangent[0] + offset[1] * tangent[1];
+  assert.ok(Math.abs(dot) < 1e-9);
+  assert.ok(Math.abs(Math.hypot(...offset) - 0.004) < 1e-9);
 });

@@ -1,9 +1,21 @@
-import { pointAt } from '../network/geo.js';
+import { offsetPerpendicular, pointAt } from '../network/geo.js';
 import { createOnBoardUnit } from './obu.js';
 
 const MS_PER_HOUR = 3600000;
+const JITTER_MAX_KM = 0.005;
+const JITTER_SIGMA_KM = JITTER_MAX_KM / 3;
 
-export function createTrip({ route, network, events, stops = new Set() }) {
+function gaussian(random) {
+  const u = 1 - random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * random());
+}
+
+function jitter(coords, s, random) {
+  const offset = Math.max(-JITTER_MAX_KM, Math.min(JITTER_MAX_KM, gaussian(random) * JITTER_SIGMA_KM));
+  return offsetPerpendicular(coords, s, offset);
+}
+
+export function createTrip({ route, network, events, stops = new Set(), random = Math.random }) {
   const { pieces } = route;
   const state = { distanceKm: 0, totalKm: route.lengthKm, simMs: 0, finished: false, recordedPositions: 0, speedKmh: network.segments.get(pieces[0].segmentId).speedKmh };
   const obu = createOnBoardUnit();
@@ -49,7 +61,7 @@ export function createTrip({ route, network, events, stops = new Set() }) {
           }
         }
       }
-      const positionAt = (simMs) => pointAt(piece.coords, fromOffset + ((simMs - fromSim) / MS_PER_HOUR) * speedKmh);
+      const positionAt = (simMs) => jitter(piece.coords, fromOffset + ((simMs - fromSim) / MS_PER_HOUR) * speedKmh, random);
       state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position: positionAt(simMs), simMs, segmentId: piece.segmentId }));
     }
     return stopped;
@@ -62,9 +74,9 @@ export function createTrip({ route, network, events, stops = new Set() }) {
 
   function addWait(simDeltaMs) {
     state.simMs += simDeltaMs;
-    const position = carPosition();
-    const segmentId = (state.finished ? pieces.at(-1) : pieces[index]).segmentId;
-    state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position, simMs, segmentId }));
+    const piece = state.finished ? pieces.at(-1) : pieces[index];
+    const s = state.finished ? piece.lengthKm : offsetKm;
+    state.recordedPositions = obu.advanceTo(state.simMs, (simMs) => events.emit('obu:record', { position: jitter(piece.coords, s, random), simMs, segmentId: piece.segmentId }));
   }
 
   return { state, advance, addWait, carPosition };

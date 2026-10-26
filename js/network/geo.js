@@ -20,12 +20,28 @@ export function polylineLengthKm(coords) {
 }
 
 export function pointAt(coords, s) {
+  const loc = locate(coords, s);
+  return loc && lerp(loc.a, loc.b, loc.t);
+}
+
+export function offsetPerpendicular(coords, s, offsetKm) {
+  const loc = locate(coords, s);
+  const [lat, lng] = lerp(loc.a, loc.b, loc.t);
+  const kmPerDegLng = KM_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180);
+  const dx = (loc.b[1] - loc.a[1]) * kmPerDegLng;
+  const dy = (loc.b[0] - loc.a[0]) * KM_PER_DEG_LAT;
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return [lat, lng];
+  return [lat + ((dx / len) * offsetKm) / KM_PER_DEG_LAT, lng - ((dy / len) * offsetKm) / kmPerDegLng];
+}
+
+function locate(coords, s) {
   let cum = 0;
   for (let i = 1; i < coords.length; i++) {
     const subLen = haversineKm(coords[i - 1], coords[i]);
     if (cum + subLen >= s || i === coords.length - 1) {
       const t = subLen > 0 ? clamp((s - cum) / subLen, 0, 1) : 0;
-      return lerp(coords[i - 1], coords[i], t);
+      return { a: coords[i - 1], b: coords[i], t };
     }
     cum += subLen;
   }
